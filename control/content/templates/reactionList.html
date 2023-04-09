@@ -1,0 +1,42 @@
+<template>
+    <div class="breadcrumb-container">
+        <ul id="breadcrumbs" class="breadcrumb margin-bottom-thirty hidden">
+        </ul>
+    </div>
+
+    <div class="sub-page slide-in">
+        <p class="info-note">
+            Reactions are small icons used to express a range of emotions and responses to posts, messages or content.
+        </p>
+
+
+        <div class="row margin-bottom-twenty">
+            <div class="col-md-3">
+                <label for="groupName">Group Name</label>
+            </div>
+            <div class="col-md-9">
+                <input id="groupName" type="text" class="form-control" maxlength="100" placeholder="Enter Group Name" />
+                <span class="error hidden" id="group-name-error">Group name must be unique...</span>
+            </div>
+        </div>
+
+        <div class="actions">
+            <div class="btn-group pull-right">
+                <button class="btn btn-success btn-add btn-outlined" id="add-reaction-btn">Add Reaction</button>
+            </div>
+        </div>
+
+        <div id="reactionsSortableList"></div>
+        <div class="hidden" id="reactionsEmptyState"></div>
+
+    </div>
+    <!-- Bottom actions require adding the .sub-page class on the <body> tag for correct scrolling  -->
+    <div class="bottom-actions slide-in">
+        <button id="cancleGroup" class="btn btn-default">
+            Cancel
+        </button>
+        <button class="btn btn-success" id="saveGroup" disabled="disabled">
+            Save
+        </button>
+    </div>
+</template>

@@ -1,0 +1,28 @@
+{
+  "author": "BuildFire",
+  "pluginName": "Default Template",
+  "pluginDescription": "Bare bones plugin showing simple autonomy of a plugin",
+  "supportEmail": "devSupport@buildfire.com",
+  "control": {
+    "content": {
+      "enabled": true
+    },
+    "design":{
+      "enabled": false
+    },
+    "settings": {
+      "enabled": false
+    },
+    "customTabs": [
+      {
+          "title": "Tests",
+          "url": "/tests/index.html"
+      }
+    ]
+  },
+  "widget": {
+
+  },
+  "features": [],
+  "languages": ["en"]
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="buildfire" content="enableMDTheme" />
+
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="./component/reactions.css" />
+
+  <!-- JS -->
+  <script src="../../../scripts/buildfire.js"></script>
+  <script src="./component/reactions.js"></script>
+</head>
+
+<body>
+  <div class="postContainer">
+    <div class="profile-container">
+      <img src="./media/avatar-placeholder.png" alt="profile image"
+        class="profile-image" />
+      <div class="name-container">
+        <p class="name">Esteban Toledo <span class="period">1min</span></p>
+        <span class="location">San Diego, CA</span>
+      </div>
+    </div>
+    <div class="textContainer">
+      <p>Which one is your favorite?</p>
+    </div>
+    <div class="imageContainer"><img
+        src="https://www.nobroker.in/blog/wp-content/uploads/2022/07/Backyard-Garden-Ideas-1.jpg" alt="post image" />
+    </div>
+    <div class="reactionsContainer">
+      <div
+        bf-reactions-itemid="itemId_2" 
+        bf-reactions-showCount="true"
+        bf-reactions-showUsersReactions="false"></div>
+    </div>
+  </div>
+
+  <script>
+    buildfire.components.reactions.build('.reactionsContainer')
+  </script>
+</body>
+
+</html>
