@@ -6,10 +6,7 @@ const concat = require('gulp-concat');
 const htmlReplace = require('gulp-html-replace');
 const minify = require('gulp-minify');
 const eslint = require('gulp-eslint');
-const imagemin = require('gulp-imagemin');
 let babel = require('gulp-babel');
-const rename = require("gulp-rename");
-const path = require("path");
 
 let version = new Date().getTime();
 const destinationFolder= releaseFolder();
