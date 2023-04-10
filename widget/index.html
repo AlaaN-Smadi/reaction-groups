@@ -5,14 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="buildfire" content="enableMDTheme" />
 
-  <link rel="stylesheet" href="style.css" />
+  <!-- build:bundleCSSFiles  -->
+  <link rel="stylesheet" href="./style/style.css" />
   <link rel="stylesheet" href="./component/reactions.css" />
+  <!-- endbuild -->  
 
   <!-- JS -->
   <script src="https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/umd/uuidv4.min.js"></script>
   <script src="../../../scripts/buildfire.js"></script>
+
+  <!-- build:bundleDataJSFiles  -->
+  <script src="./data/ReactionsGroup.js"></script>
+  <script src="./data/ReactionTypes.js"></script>
+  <script src="./dataAccess/ReactionsGroups.js"></script>
+  <!-- endbuild -->  
+
+  <!-- build:bundleJSFiles  -->
   <script src="./component/reactions.js"></script>
   <script src="./js/index.js"></script>
+  <!-- endbuild -->
+
 </head>
 
 <body>

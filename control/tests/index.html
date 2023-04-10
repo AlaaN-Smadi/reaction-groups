@@ -11,21 +11,25 @@
 
 <body>
     <div id="mocha"></div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/9.2.2/mocha.min.js"
-        integrity="sha512-oXC8/IbLhzqkTEc1KTB5CullqApqZY3KihilcptKRbqDFTCG0OsfbNmArlM7warUN0faPurmCuOYhIO8zBRcDQ=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.6/chai.min.js"
-        integrity="sha512-sP7hp2cpEWsmOHQPc6taNuXFmvG59BhI3YS3tOvZ+nDEqOyyORLiY3nBjLkWgCNI8SFZ5koUyiBO42Q3wzZDrQ=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </body>
 
 <!-- JS -->
 <script src="../../../../scripts/buildfire.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/9.2.2/mocha.min.js"
+    integrity="sha512-oXC8/IbLhzqkTEc1KTB5CullqApqZY3KihilcptKRbqDFTCG0OsfbNmArlM7warUN0faPurmCuOYhIO8zBRcDQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.6/chai.min.js"
+    integrity="sha512-sP7hp2cpEWsmOHQPc6taNuXFmvG59BhI3YS3tOvZ+nDEqOyyORLiY3nBjLkWgCNI8SFZ5koUyiBO42Q3wzZDrQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- build:bundleDataJSFiles  -->
 <script src="../../widget/data/ReactionsGroup.js"></script>
 <script src="../../widget/data/ReactionTypes.js"></script>
 <script src="../../widget/dataAccess/ReactionsGroups.js"></script>
+<!-- endbuild -->
 
+<!-- build:bundleJSFiles  -->
 <script src="./handleTests.js"></script>
+<!-- endbuild -->
 
 </html>

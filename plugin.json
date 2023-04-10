@@ -1,7 +1,7 @@
 {
   "author": "BuildFire",
-  "pluginName": "Default Template",
-  "pluginDescription": "Bare bones plugin showing simple autonomy of a plugin",
+  "pluginName": "Reactions Plugin",
+  "pluginDescription": "reactions plugin",
   "supportEmail": "devSupport@buildfire.com",
   "control": {
     "content": {
