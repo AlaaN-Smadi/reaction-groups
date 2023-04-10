@@ -1,21 +1,3 @@
-/*
---bf-theme-primary: #45cae6 !important;
---bf-theme-success: #0ac775 !important;
---bf-theme-warning: #ffcf40 !important;
---bf-theme-info: #66d6ed !important;
---bf-theme-default: #07a05e !important;
---bf-theme-danger: #f24965 !important;
---bf-theme-background: #ffffff !important;
---bf-theme-body-text: #858585 !important;
---bf-theme-footer-background: #ffffff !important;
---bf-theme-footer-icon: #45cae6 !important;
---bf-theme-header-text: #000000 !important;
---bf-theme-icons: #45cae6 !important;
---bf-theme-title-bar: #0ac775 !important;
---bf-theme-title-bar-text-icons: #ffffff !important;
---bf-font-family: Lato, sans-serif !important; 
-*/
-
 html {
     height: 100vh;
     overflow: scroll;
@@ -23,7 +5,7 @@ html {
 
 body {
     height: 100vh;
-    overflow: scroll;
+    overflow: hidden;
 }
 
 .postContainer {

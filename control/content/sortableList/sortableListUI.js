@@ -28,7 +28,7 @@ class SortableListUI {
             this.sortableList.onImageClick = this.onImageClick;
             this.sortableList.onEditBtnClicked = this.onEditBtnClicked;
             this.sortableList.onToggleChanged = this.onToggleChanged;
-            this.sortableList.onImageAdded = this.onImageAdded;
+            this.sortableList.onImageChanged = this.onImageChanged;
             this.sortableList.onSelectedImageChange = this.onSelectedImageChange;
             this.sortableList.onUnSelectedImageChange = this.onUnSelectedImageChange;
         } else {
@@ -119,7 +119,7 @@ class SortableListUI {
 
     }
 
-    onImageAdded(item, imgSrc, index) {
+    onImageChanged(item, imgSrc, index) {
 
     }
     onSelectedImageChange(item, imgSrc, index) {
@@ -191,7 +191,7 @@ class groupListUI extends SortableListUI {
         if (GroupsList.groups.length === 0) {
             GroupsList.updateEmptyState("empty");
         }
-        APIHadlers.updateGroups();
+        APIHandlers.updateGroups();
     }
 
     onEditBtnClicked = (item, index) => {
@@ -200,7 +200,7 @@ class groupListUI extends SortableListUI {
     }
 
     onOrderChange = () => {
-        APIHadlers.updateGroups();
+        APIHandlers.updateGroups();
     }
 
 }
@@ -306,7 +306,7 @@ class reactionListUI extends SortableListUI {
                             default:
                                 break;
                         }
-                        this.onImageAdded(item, result.selectedFiles[0])
+                        this.onImageChanged(item, result.selectedFiles[0])
                     }
                 }
             });
@@ -315,6 +315,7 @@ class reactionListUI extends SortableListUI {
 
     onAddItem(item, index, divRow) {
         ReactionsList.reactions = this.sortableList.items;
+        ReactionsList.toggleSaveButton();
     }
 
     onDeleteItem = () => {
@@ -328,11 +329,13 @@ class reactionListUI extends SortableListUI {
     }
 
     onOrderChange = () => {
+        ReactionsList.reactions = this.sortableList.items;
         ReactionsList.toggleSaveButton();
         State.warn = true;
     }
 
     onToggleChanged = () => {
+        ReactionsList.reactions = this.sortableList.items;
         ReactionsList.toggleSaveButton();
         State.warn = true;
     }
@@ -369,7 +372,8 @@ class reactionListUI extends SortableListUI {
         })
     }
 
-    onImageAdded = () => {
+    onImageChanged = () => {
+        ReactionsList.reactions = this.sortableList.items;
         ReactionsList.toggleSaveButton();
         State.warn = true;
     }

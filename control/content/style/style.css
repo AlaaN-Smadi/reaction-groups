@@ -1,4 +1,8 @@
 
+body{
+    overflow: hidden;
+}
+
 p.info-note {
     background-color: var(--c-gray1);
     line-height: 1.33;
@@ -22,6 +26,12 @@ ul.historyList{
 
 li.historyListItem{
     display: inline-block;
+}
+
+.sub-page{
+    max-height: calc(100vh - 78px);
+    overflow: hidden;
+    overflow-y: auto;
 }
 
 .slide-in {

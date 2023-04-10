@@ -8,8 +8,8 @@ const State = {
     activePage: '',
 }
 
-const APIHadlers = {
-    savingTimer: null,
+const APIHandlers = {
+    savingTimer: null, sendingTimer:null,
 
     updateGroups() {
         clearTimeout(this.savingTimer);
@@ -24,6 +24,7 @@ const APIHadlers = {
                 if (State.activePage !== 'groupList') {
                     Views.navigate('groupList');
                 }
+                this.sendToWidget(false, GroupsList.groups[0].reactions);
             })
         }, 300)
     },
@@ -36,24 +37,38 @@ const APIHadlers = {
                 GroupsList.groups = [];
                 GroupsList.list.init([]);
                 GroupsList.updateEmptyState("empty");
-               
 
-                let reactionGroups = new ReactionsGroup({groups:[]});
 
-                ReactionsGroups.insert(reactionGroups, (err,res)=>{
-                    if(err) return console.error(err);
+                let reactionGroups = new ReactionsGroup({ groups: [] });
+
+                ReactionsGroups.insert(reactionGroups, (err, res) => {
+                    if (err) return console.error(err);
 
                 })
-            } else if(!res.groups.length){
+            } else if (!res.groups.length) {
                 GroupsList.groups = [];
                 GroupsList.list.init([]);
                 return GroupsList.updateEmptyState("empty");
-            }else {
+            } else {
                 GroupsList.groups = res.groups;
                 GroupsList.list.init(res.groups);
+                this.sendToWidget(false, GroupsList.groups[0].reactions);
                 return GroupsList.updateEmptyState("list printed");
             }
         })
+    },
+
+    /**
+     * @param {boolean} openReactionList 
+     * @param {Array} reactions 
+     */
+    sendToWidget(openReactionList, reactions) {
+        clearTimeout(this.sendingTimer);
+        this.sendingTimer = setTimeout(() => {
+            buildfire.messaging.sendMessageToWidget({
+                openReactionList, reactions
+            });
+        }, 300);
     }
 }
 
@@ -84,7 +99,7 @@ const GroupsList = {
             ReactionsGroups.get({}, (err, res) => {
                 if (err) { }
 
-                APIHadlers.getGroups();
+                APIHandlers.getGroups();
             })
         } else {
             if (this.groups.length) {
@@ -131,6 +146,8 @@ const ReactionsList = {
 
         this._initList(options);
         State.activeGroup = options;
+
+        APIHandlers.sendToWidget(true, this.reactions);
     },
 
     _addListeners() {
@@ -148,6 +165,7 @@ const ReactionsList = {
                     if (isConfirmed) {
                         if (e) console.error(e);
                         if (isConfirmed) {
+                            APIHandlers.sendToWidget(false, GroupsList.groups[0].reactions);
                             return Views.navigate('groupList');
                         }
                     }
@@ -167,7 +185,8 @@ const ReactionsList = {
                 this.savingTimer = setTimeout(() => {
                     this.updateEmptyState("list printed");
 
-                    let newReaction = new ReactionsTypes({ id: new Date().getTime() });
+                    const id = uuidv4();
+                    const newReaction = new ReactionsTypes({ id });
                     this.list.addItem(newReaction);
                     this.toggleSaveButton();
                 }, 100);
@@ -212,7 +231,7 @@ const ReactionsList = {
                         })
                         GroupsList.list.updateItem(updatedGroup, State.groupIndex)
                     }
-                    APIHadlers.updateGroups();
+                    APIHandlers.updateGroups();
                 });
             }
         })
@@ -256,7 +275,10 @@ const ReactionsList = {
                 listItem.innerHTML = `<a>${breadCrumb}</a>`;
 
                 listItem.onclick = () => {
-                    if (!State.warn) return Views.navigate('groupList');
+                    if (!State.warn) {
+                        APIHandlers.sendToWidget(false, GroupsList.groups[0].reactions);
+                        return Views.navigate('groupList');
+                    }
                     let navigateOptions = {
                         title: `Unsaved Changes`,
                         message: `This page contains unsaved changes. Do you still wish to leave the page?`,
@@ -266,7 +288,10 @@ const ReactionsList = {
                     buildfire.dialog.confirm(navigateOptions,
                         (e, isConfirmed) => {
                             if (e) console.error(e);
-                            if (isConfirmed) Views.navigate('groupList');
+                            if (isConfirmed){
+                                APIHandlers.sendToWidget(false, GroupsList.groups[0].reactions);
+                                Views.navigate('groupList');
+                            }
                         }
                     );
                 };
@@ -290,6 +315,8 @@ const ReactionsList = {
 
         if (this.reactions.length === 5) this.uiElements.addBtn.setAttribute('disabled', 'disabled');
         else this.uiElements.addBtn.removeAttribute('disabled');
+
+        APIHandlers.sendToWidget(true, this.reactions);
     },
 
     updateEmptyState(state) {

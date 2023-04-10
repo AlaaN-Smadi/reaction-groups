@@ -21,12 +21,12 @@ buildfire.components.reactions = (() => {
             return "$$reactions";
         }
 
-        // options: {itemId, userId, reactionId=null, reactionType}
+        // options: {itemId, userId, reactionId=null, reactionUUID}
         static _insert(options, callback) {
             let reaction = new Reaction({
                 itemId: options.itemId,
                 userId: options.userId,
-                reactions: [{ type: options.reactionType, createdOn: new Date() }]
+                reactions: [{ reactionUUID: options.reactionUUID, createdOn: new Date() }]
             })
             reaction._buildfire.index = this.buildIndex(reaction);
 
@@ -36,17 +36,17 @@ buildfire.components.reactions = (() => {
                     if (err) {
                         return callback(err);
                     }
-                    buildfire.analytics.trackAction(options.itemId + "-" + options.reactionType + "-react");
+                    buildfire.analytics.trackAction(options.itemId + "-" + options.reactionUUID + "-react");
                     return callback(null, result);
                 }
             );
         }
 
-        // options: reaction, reactionType, operation, allowMultipleReactions
+        // options: reaction, reactionUUID, operation, allowMultipleReactions
         static _update(options, callback) {
 
             if (!options) {
-                return callback("Invalid options. Options must be set and have at least reaction, reactionType and operation properties!");
+                return callback("Invalid options. Options must be set and have at least reaction, reaction ID and operation properties!");
             }
             if (!["add", "remove", "toggle"].includes(options.operation)) {
                 return callback("Invalid operations option. Operations coulde be one of the following:  add, remove or toggle");
@@ -55,8 +55,8 @@ buildfire.components.reactions = (() => {
                 return callback("Invalid options, Missing reaction!");
             }
 
-            if (!options.reactionType && ReactionsTypes.validateReactionTypes(options.reactionType)) {
-                return callback("Invalid options, Missing reactionType!");
+            if (!options.reactionUUID && ReactionsTypes.validateReactionTypes(options.reactionUUID)) {
+                return callback("Invalid options, Missing reaction ID!");
             }
 
             let filter = {
@@ -66,13 +66,13 @@ buildfire.components.reactions = (() => {
 
             if (options.allowMultipleReactions) {
                 if (options.operation == "add" || options.operation == "toggle") {
-                    obj = { $addToSet: { reactions: { type: options.reactionType, createdOn: new Date() } } }
+                    obj = { $addToSet: { reactions: { reactionUUID: options.reactionUUID, createdOn: new Date() } } }
                 } else if (options.operation == "remove") {
-                    obj = { $pull: { reactions: { type: options.reactionType } } }
+                    obj = { $pull: { reactions: { reactionUUID: options.reactionUUID } } }
                 }
             } else {
                 if (options.operation == "add" || options.operation == "toggle") {
-                    obj = { $set: { reactions: [{ type: options.reactionType, createdOn: new Date() }] } }
+                    obj = { $set: { reactions: [{ reactionUUID: options.reactionUUID, createdOn: new Date() }] } }
                 } else if (options.operation == "remove") {
                     obj = { $set: { reactions: [] } }
                 }
@@ -90,7 +90,7 @@ buildfire.components.reactions = (() => {
             );
         }
 
-        // options: {itemId, userId, reactionId=null, reactionType}
+        // options: {itemId, userId, reactionId=null, reactionUUID}
         static _search(options, callback) {
 
             if (options.reactionId) {
@@ -114,14 +114,14 @@ buildfire.components.reactions = (() => {
 
         }
 
-        // options: {itemId, userId, reactionId=null, reactionType, allowMultipleReactions}
+        // options: {itemId, userId, reactionId=null, reactionUUID, allowMultipleReactions}
         static unReactReact(options, callback) {
             if (typeof callback !== 'function') {
                 return console.error("callback must be a function!");
             }
 
             if (!options) {
-                return callback("Invalid options. Options must be set and have at least oldReactionType, newReactionType, userId and itemId properties!");
+                return callback("Invalid options. Options must be set and have at least oldReactionType, newReactionUUID, userId and itemId properties!");
             }
             if (!options.itemId) {
                 return callback("Invalid options, Missing itemId!");
@@ -129,8 +129,8 @@ buildfire.components.reactions = (() => {
             if (!options.userId) {
                 return callback("Invalid options, Messing userId!");
             }
-            if (!options.reactionType) {
-                return callback("Invalid options, Missing reactionType!");
+            if (!options.reactionUUID) {
+                return callback("Invalid options, Missing reaction ID!");
             }
 
             this._search(options, (err, result) => {
@@ -139,7 +139,7 @@ buildfire.components.reactions = (() => {
                 }
 
                 if (result && result.data) {
-                    if (result.data.reactions.find((reaction) => reaction.type === options.reactionType)) {
+                    if (result.data.reactions.find((reaction) => reaction.id === options.reactionUUID)) {
                         return callback(null, { status: 'noAction', data: result })
                     } else {
                         const reaction = result.data;
@@ -147,7 +147,7 @@ buildfire.components.reactions = (() => {
                         reaction.id = result.id;
                         let updateOptions = {
                             reaction: reaction,
-                            reactionType: options.reactionType,
+                            reactionUUID: options.reactionUUID,
                             operation: "toggle",
                             allowMultipleReactions: options.allowMultipleReactions
                         };
@@ -170,20 +170,21 @@ buildfire.components.reactions = (() => {
 
         }
 
-        // options: {itemId, userId, reactionId=null, reactionType}
+        // options: {itemId, userId, reactionId=null, reactionUUID}
         static react(options, callback) {
             if (typeof callback !== 'function') {
                 return console.error("callback must be a function!");
             }
 
             if (!options) {
-                return callback("Invalid options. Options must be set and have at least reactionType, userId and itemId properties!");
+                return callback("Invalid options. Options must be set and have at least reaction ID, userId and itemId properties!");
             }
             if (!options.itemId) {
                 return callback("Invalid options, Missing itemId!");
             }
-            if (!options.reactionType) {
-                return callback("Invalid options, Missing reactionType!");
+
+            if (!options.reactionUUID) {
+                return callback("Invalid options, Missing reaction ID!");
             }
             if (!options.userId) {
                 return callback("Invalid options, Messing userId!");
@@ -194,14 +195,14 @@ buildfire.components.reactions = (() => {
                     return callback(err)
                 }
                 if (result && result.data) {
-                    if (result.data.reactions.find((reaction) => reaction.type === options.reactionType)) {
+                    if (result.data.reactions.find((reaction) => reaction.reactionUUID === options.reactionUUID)) {
                         return callback(null, { status: 'noAction', data: result })
                     } else {
                         const reaction = result.data;
                         reaction.id = result.id;
                         let updateOptions = {
                             reaction: reaction,
-                            reactionType: options.reactionType,
+                            reactionUUID: options.reactionUUID,
                             operation: "add",
                             allowMultipleReactions: options.allowMultipleReactions
                         };
@@ -223,14 +224,14 @@ buildfire.components.reactions = (() => {
             })
         }
 
-        // options: {itemId, userId, reactionId=null, reactionType}
+        // options: {itemId, userId, reactionId=null, reactionUUID}
         static unReact(options, callback) {
             if (typeof callback !== 'function') {
                 return console.error("callback must be a function!");
             }
 
             if (!options) {
-                return callback("Invalid options. Options must be set and have at least reactionType, userId and itemId properties!");
+                return callback("Invalid options. Options must be set and have at least reaction ID, userId and itemId properties!");
             }
             if (!options.itemId) {
                 return callback("Invalid options, Missing itemId!");
@@ -238,8 +239,8 @@ buildfire.components.reactions = (() => {
             if (!options.userId) {
                 return callback("Invalid options, Messing userId!");
             }
-            if (!options.reactionType) {
-                return callback("Invalid options, Missing reactionType!");
+            if (!options.reactionUUID) {
+                return callback("Invalid options, Missing reaction ID!");
             }
 
             this._search(options, (err, result) => {
@@ -248,7 +249,7 @@ buildfire.components.reactions = (() => {
                 }
 
                 if (result && result.data) {
-                    if (!result.data.reactions.find((reaction) => reaction.type === options.reactionType)) {
+                    if (!result.data.reactions.find((reaction) => reaction.reactionUUID === options.reactionUUID)) {
                         return callback(null, { status: 'noAction', data: result })
                     } else {
 
@@ -264,7 +265,7 @@ buildfire.components.reactions = (() => {
                                 } else if (err) {
                                     return callback(err);
                                 }
-                                buildfire.analytics.trackAction(options.itemId + "-" + options.reactionType + "-unReact");
+                                buildfire.analytics.trackAction(options.itemId + "-" + options.reactionUUID + "-unReact");
                                 return callback(null, { status: 'deleted' });
                             });
 
@@ -272,7 +273,7 @@ buildfire.components.reactions = (() => {
 
                             let updateOptions = {
                                 reaction: reaction,
-                                reactionType: options.reactionType,
+                                reactionUUID: options.reactionUUID,
                                 operation: "remove",
                                 allowMultipleReactions: options.allowMultipleReactions
                             };
@@ -281,7 +282,7 @@ buildfire.components.reactions = (() => {
                                 if (err) {
                                     return callback(err);
                                 }
-                                buildfire.analytics.trackAction(options.itemId + "-" + options.reactionType + "-unReact");
+                                buildfire.analytics.trackAction(options.itemId + "-" + options.reactionUUID + "-unReact");
                                 return callback(null, { status: 'deleted', data: result })
                             })
                         }
@@ -291,7 +292,7 @@ buildfire.components.reactions = (() => {
                 }
             })
         }
-        // options: { itemId, reactionType, pageIndex, pageSize }
+        // options: { itemId, reactionUUID, pageIndex, pageSize }
         static get(options, callback) { // fetch who reacted for specific item
             if (!callback || typeof callback !== 'function') {
                 return console.error("callback must be a function!");
@@ -300,7 +301,7 @@ buildfire.components.reactions = (() => {
             if (!options) {
                 return callback("missing get options!");
             }
-            let { itemId, reactionType, pageIndex, pageSize } = options;
+            let { itemId, reactionUUID, pageIndex, pageSize } = options;
 
             if (!itemId) {
                 return callback("Invalid get options!");
@@ -315,13 +316,13 @@ buildfire.components.reactions = (() => {
             }
 
             let filter = {};
-            if (reactionType) {
-                filter = { "_buildfire.index.array1.string1": "reactionType-" + itemId + "-" + reactionType }
+            if (reactionUUID) {
+                filter = { "_buildfire.index.array1.string1": "reactionUUID-" + itemId + "-" + reactionUUID }
             } else {
                 // get all types
                 // put all available types in an array as [itemId-type, ...]
-                let inArr = ReactionsTypes.types.map(reactio => {
-                    return `reactionType-${itemId}-${reactio.type}`
+                let inArr = ReactionsTypes.types.map(reaction => {
+                    return `reactionUUID-${itemId}-${reaction.id}`
                 })
 
                 filter = { "_buildfire.index.array1.string1": { $in: inArr } }
@@ -372,7 +373,7 @@ buildfire.components.reactions = (() => {
         static buildIndex(data = {}) {
             const index = {
                 string1: data.itemId + '-' + data.userId,
-                array1: data.reactions.map(reaction => ({ string1: "reactionType-" + data.itemId + "-" + reaction.type }))
+                array1: data.reactions.map(reaction => ({ string1: "reactionUUID-" + data.itemId + "-" + reaction.reactionUUID }))
             };
 
             return index;
@@ -452,7 +453,7 @@ buildfire.components.reactions = (() => {
                 }
             );
         }
-        // options = { itemId, reactionType, userId }
+        // options = { itemId, reactionUUID, userId }
         static increment(options, callback) {
             if (!callback || typeof callback !== 'function') {
                 return console.error("callback must be a function!");
@@ -463,14 +464,14 @@ buildfire.components.reactions = (() => {
             if (!options.itemId) {
                 return callback("Invalid options, Missing increment itemId!");
             }
-            if (!options.reactionType) {
-                return callback("Invalid options, Missing increment reactionType!");
+            if (!options.reactionUUID) {
+                return callback("Invalid options, Missing increment reaction ID!");
             }
             if (!options.userId) {
                 return callback("Invalid options, Missing increment userId!");
             }
 
-            let { itemId, reactionType, userId } = options;
+            let { itemId, reactionUUID, userId } = options;
             this._search(itemId, (err, result) => {
                 if (err) {
                     return callback(err);
@@ -478,7 +479,7 @@ buildfire.components.reactions = (() => {
                 if (!result || !result.length) {
                     let summery = new ReactionsSummary({
                         itemId,
-                        reactions: [{ type: reactionType, count: 1, lastReactionBy: userId }]
+                        reactions: [{ reactionUUID, count: 1, lastReactionBy: userId }]
                     })
                     summery._buildfire.index = this.buildIndex(summery);
                     this._create(summery, (err, res) => {
@@ -488,19 +489,19 @@ buildfire.components.reactions = (() => {
                         return callback(null, { status: 'done' })
                     })
                 } else {
-                    let typeData = result[0].data.reactions.find(reaction => reaction.type == reactionType);
+                    let reactionData = result[0].data.reactions.find(reaction => reaction.reactionUUID == reactionUUID);
                     let filter = {}, obj = {};
-                    if (typeData) {
+                    if (reactionData) {
                         filter = {
                             "_buildfire.index.string1": itemId,
-                            "reactions.type": reactionType,
+                            "reactions.reactionUUID": reactionUUID,
                         }
                         obj = { $inc: { "reactions.$.count": 1 }, $set: { "reactions.$.lastReactionBy": userId } }
                     } else {
                         filter = {
                             '_buildfire.index.string1': itemId,
                         }
-                        obj = { $addToSet: { reactions: { type: reactionType, count: 1, lastReactionBy: userId }, "_buildfire.index.array1": { string1: 'reactionType-' + reactionType } } }
+                        obj = { $addToSet: { reactions: { reactionUUID, count: 1, lastReactionBy: userId }, "_buildfire.index.array1": { string1: 'reactionUUID-' + reactionUUID } } }
                     }
 
                     this._update(filter, obj, (err, res) => {
@@ -512,7 +513,7 @@ buildfire.components.reactions = (() => {
                 }
             })
         }
-        // options = { itemId, reactionType }
+        // options = { itemId, reactionUUID }
         static decrement(options, callback) {
             if (!callback || typeof callback !== 'function') {
                 return console.error("callback must be a function!");
@@ -520,14 +521,14 @@ buildfire.components.reactions = (() => {
             if (!options) {
                 return callback("Invalid options, Missing decrement options!");
             }
-            if (!options.reactionType) {
-                return callback("Invalid options, Missing decrement reactionType!");
+            if (!options.reactionUUID) {
+                return callback("Invalid options, Missing decrement reaction ID!");
             }
             if (!options.itemId) {
                 return callback("Invalid options, Missing decrement itemId!");
             }
 
-            let { itemId, reactionType } = options;
+            let { itemId, reactionUUID } = options;
             this._search(itemId, (err, result) => {
                 if (err) {
                     return callback(err);
@@ -535,7 +536,7 @@ buildfire.components.reactions = (() => {
                 if (!result || !result.length) {
                     let summery = new ReactionsSummary({
                         itemId,
-                        reactions: [{ type: reactionType, count: 0, lastReactionBy: null }]
+                        reactions: [{ reactionUUID, count: 0, lastReactionBy: null }]
                     })
                     summery._buildfire.index = this.buildIndex(summery);
                     this._create(summery, (err, res) => {
@@ -545,19 +546,19 @@ buildfire.components.reactions = (() => {
                         return callback(null, { status: 'done' })
                     })
                 } else {
-                    let typeData = result[0].data.reactions.find(reaction => reaction.type == reactionType);
+                    let typeData = result[0].data.reactions.find(reaction => reaction.reactionUUID == reactionUUID);
                     let filter = {}, obj = {};
                     if (typeData) {
                         filter = {
                             "_buildfire.index.string1": itemId,
-                            "reactions.type": reactionType,
+                            "reactions.reactionUUID": reactionUUID,
                         }
                         obj = { $inc: { "reactions.$.count": typeData.count > 0 ? -1 : 0 }, $set: { "reactions.$.lastReactionBy": null } }
                     } else {
                         filter = {
                             '_buildfire.index.string1': itemId,
                         }
-                        obj = { $addToSet: { reactions: { type: reactionType, count: 0, lastReactionBy: null }, "_buildfire.index.array1": { string1: 'reactionType-' + reactionType } } }
+                        obj = { $addToSet: { reactions: { reactionUUID, count: 0, lastReactionBy: null }, "_buildfire.index.array1": { string1: 'reactionUUID-' + reactionUUID } } }
                     }
 
                     this._update(filter, obj, (err, res) => {
@@ -574,7 +575,7 @@ buildfire.components.reactions = (() => {
         static buildIndex(data = {}) {
             const index = {
                 string1: data.itemId,
-                array1: data.reactions.map(reaction => ({ string1: 'reactionType-' + reaction.type }))
+                array1: data.reactions.map(reaction => ({ string1: 'reactionUUID-' + reaction.reactionUUID }))
             };
 
             return index;
@@ -605,26 +606,33 @@ buildfire.components.reactions = (() => {
                         }
                     }
                 } else {
-                    group = result.data.groups[0];
+                    // to get the first group that has active reactions
+                    for(let i=0;i<result.data.groups.length; i++){
+                        let hasActive = result.data.groups[i].reactions.find(reaction=>reaction.isActive===true);
+                        if(hasActive){
+                            group=result.data.groups[i];
+                            break;
+                        }
+                    }
                 }
 
                 if (!group || !group.reactions || !group.reactions.length) {
                     return callback('No reactions added yet', null)
                 }
 
-                this.types = group.reactions;
-                return callback(null, group.reactions);
+                const allActiveReactions = group.reactions.filter(reaction=>(reaction.isActive));
+                this.types = allActiveReactions;
+                return callback(null, allActiveReactions);
             });
         }
 
-        static validateReactionTypes(reactionType, callback) {
-            reactionType = reactionType.toLowerCase();
-            let validState = this.types.find(reaction => reaction.type === reactionType);
+        static validateReactionTypes(reactionUUID, callback) {
+            let validState = this.types.find(reaction => reaction.id === reactionUUID);
 
             if (validState) {
                 return callback(null, validState)
             }
-            return callback('Invalid Reaction Type');
+            return callback('Invalid Reaction ID');
         }
     }
 
@@ -705,7 +713,7 @@ buildfire.components.reactions = (() => {
             reactions.forEach(reaction => {
                 // check if the reaction is valid or not
                 if (reaction && reaction.data && reaction.data.itemId && reaction.data.reactions && reaction.data.reactions.length) {
-                    ReactionsTypes.validateReactionTypes(reaction.data.reactions[0].type, (e, r) => {
+                    ReactionsTypes.validateReactionTypes(reaction.data.reactions[0].reactionUUID, (e, r) => {
                         if (e) {
                             return console.error(e);
                         }
@@ -713,10 +721,10 @@ buildfire.components.reactions = (() => {
                             let containers = document.querySelectorAll(`[bf-reactions-itemid="${reaction.data.itemId}"]`);
                             containers.forEach(container => {
                                 let mainButton = container.querySelector('[bf-reactions-btn]');
-                                let userReactionIcon = container ? container.querySelector(`[bf-reactions-type="${reaction.data.reactions[0].type}"]`) : null;
+                                let userReactionIcon = container ? container.querySelector(`[bf-reactions-uuid="${reaction.data.reactions[0].reactionUUID}"]`) : null;
 
                                 if (container && userReactionIcon) {
-                                    container.setAttribute('bf-user_react-type', reaction.data.reactions[0].type);
+                                    container.setAttribute('bf-user_react-uuid', reaction.data.reactions[0].reactionUUID);
                                     container.setAttribute('bf-user_react-id', reaction.id);
                                     userReactionIcon.classList.add('reacted');
                                     userReactionIcon.style.color = userReactionIcon.getAttribute('bf-reactions-color');
@@ -844,11 +852,19 @@ buildfire.components.reactions = (() => {
             if (!ReactionsTypes.types.length) {
                 ReactionsTypes.getReactionsTypes(this.groupName, (err,res)=>{
                     if(err) return console.error(err);
-                    this.reactionType = res;
+                    this.reactionsArr = res;
+
+                    if(!this.reactionsArr || !this.reactionsArr.length){
+                        return console.error('No reactions added yet')
+                    }
                     this._init();
                 })
             } else {
-                this.reactionType = ReactionsTypes.types;
+                this.reactionsArr = ReactionsTypes.types;
+
+                if(!this.reactionsArr || !this.reactionsArr.length){
+                    return console.error('No reactions added yet')
+                }
                 this._init();
             }
         }
@@ -862,18 +878,18 @@ buildfire.components.reactions = (() => {
             this.container.innerHTML = null;
             // build the component HTML elements
             let iconsContainer = '';
-            this.reactionType.forEach((reaction, idx) => {
+            this.reactionsArr.forEach((reaction, idx) => {
                 iconsContainer += ` <div reactions-icon-buttons class="reactions-icon-buttons reaction-container-show">
-                                        <img style="animation-duration:${idx / 10 + 0.1}s;" bf-reactions-non-reacted-url="${reaction.unSelectedUrl}" bf-reactions-reacted-url="${reaction.selectedUrl}" bf-reactions-url="${reaction.url}" bf-reactions-type="${reaction.type}" class="reactions-clickable-image reactions-icon-animation" src="${reaction.selectedUrl}" />
+                                        <img style="animation-duration:${idx / 10 + 0.1}s;" bf-reactions-non-reacted-url="${reaction.unSelectedUrl}" bf-reactions-reacted-url="${reaction.selectedUrl}" bf-reactions-url="${reaction.url}" bf-reactions-uuid="${reaction.id}" class="reactions-clickable-image reactions-icon-animation" src="${reaction.selectedUrl}" />
                                     </div>`
             });
             this.container.setAttribute('bf-reactions-itemid', this.itemId);
-            this.container.setAttribute('bf-user_react-type', ''); // to save the reaction type that user reacted with
-            this.container.setAttribute('bf-user_react-id', ''); // to save the reaction id that the user reacted with 
+            this.container.setAttribute('bf-user_react-uuid', ''); // reaction id from the reaction list
+            this.container.setAttribute('bf-user_react-id', '');   // selected reaction id that autogenerated when the user selected
             this.container.classList.add('reactions-main-container');
             this.container.innerHTML = `
                 <div class="reaction-main-button">
-                    <div bf-reactions-btn class="reactions-main-icon-container" ><img class="reactions-main-icon" bf-reactions-default-src="${this.reactionType[0].unSelectedUrl}" src="${this.reactionType[0].unSelectedUrl}" /></div>
+                    <div bf-reactions-btn class="reactions-main-icon-container" ><img class="reactions-main-icon" bf-reactions-default-src="${this.reactionsArr[0].unSelectedUrl}" src="${this.reactionsArr[0].unSelectedUrl}" /></div>
                     <span style="visibility:hidden;" class="reactions-total-count reactions-hidden" bf-reactions-total-count="0">0</span>
                 </div>
                 <div class="reactions-icon-container reactions-hidden" bf-reaction-icon-container>${iconsContainer}</div>
@@ -905,7 +921,7 @@ buildfire.components.reactions = (() => {
                 // press and hold to show reactions list
                 this.holdTimer = setInterval(() => {
                     this.holdPeriod += 1;
-                    if (this.holdPeriod > 10 && this.reactionType.length > 1) {
+                    if (this.holdPeriod > 10 && this.reactionsArr.length > 1) {
                         this._showReactionIcons();
                         this.holdPeriod = 0;
                         clearInterval(this.holdTimer);
@@ -915,13 +931,13 @@ buildfire.components.reactions = (() => {
 
             let clearHoldTimer = () => {
                 let reactionIconsContainer = this.container.querySelector('[bf-reaction-icon-container]');
-                if ((this.holdPeriod < 10 || this.reactionType.length === 1) && reactionIconsContainer && reactionIconsContainer.classList.contains('reactions-hidden')) {
-                    let reactionIcons = this.container.querySelectorAll('[bf-reactions-type]');
+                if ((this.holdPeriod < 10 || this.reactionsArr.length === 1) && reactionIconsContainer && reactionIconsContainer.classList.contains('reactions-hidden')) {
+                    let reactionIcons = this.container.querySelectorAll('[bf-reactions-uuid]');
                     let reacted = this.container.querySelector('.reacted');
                     if (reacted) {
-                        this._validateUserAndReact(reacted.getAttribute('bf-reactions-type'), reacted);
+                        this._validateUserAndReact(reacted.getAttribute('bf-reactions-uuid'), reacted);
                     } else {
-                        this._validateUserAndReact(reactionIcons[0].getAttribute('bf-reactions-type'), reactionIcons[0]);
+                        this._validateUserAndReact(reactionIcons[0].getAttribute('bf-reactions-uuid'), reactionIcons[0]);
                     }
                 }
 
@@ -935,15 +951,14 @@ buildfire.components.reactions = (() => {
             reactionBtn.addEventListener('mouseup', clearHoldTimer);
             reactionBtn.addEventListener('touchend', clearHoldTimer);
 
-            let reactionIcons = this.container.querySelectorAll('[bf-reactions-type]');
+            let reactionIcons = this.container.querySelectorAll('[bf-reactions-uuid]');
             reactionIcons.forEach(icon => {
                 icon.addEventListener('click', (event) => {
                     // prevent download image on iOS
                     if (event.target.tagName.toLowerCase() === 'img') {
                         event.preventDefault();
                     }
-
-                    this._validateUserAndReact(icon.getAttribute('bf-reactions-type'), icon);
+                    this._validateUserAndReact(icon.getAttribute('bf-reactions-uuid'), icon);
                 })
             })
         }
@@ -961,34 +976,34 @@ buildfire.components.reactions = (() => {
             });
         }
 
-        _validateUserAndReact(newReactionType, icon) {
+        _validateUserAndReact(newReactionUUID, icon) {
             buildfire.auth.getCurrentUser((err, user) => {
                 if (err || !user) {
                     buildfire.auth.login({}, (err, user) => {
                         if (user && user._id) {
-                            this._reactionHandler(newReactionType, icon, user._id);
+                            this._reactionHandler(newReactionUUID, icon, user._id);
                         }
                     });
                 } else if (user && user._id) {
-                    this._reactionHandler(newReactionType, icon, user._id);
+                    this._reactionHandler(newReactionUUID, icon, user._id);
                 }
             })
         }
 
-        _reactionHandler(newReactionType, icon, userId) {
-            let userReactType = this.container.getAttribute('bf-user_react-type');
+        _reactionHandler(newReactionUUID, icon, userId) {
+            let userReactUUID = this.container.getAttribute('bf-user_react-uuid');
 
             let selectedReaction = {
-                type: newReactionType,
+                reactionUUID: newReactionUUID,
                 reactionId: this.container.getAttribute('bf-user_react-id'),
                 itemId: this.container.getAttribute('bf-reactions-itemid'),
             }
 
-            if (userReactType) {
-                if (userReactType === newReactionType) {
-                    this._deselectReaction({ icon, userReactType, userId, selectedReaction })
+            if (userReactUUID) {
+                if (userReactUUID === newReactionUUID) {
+                    this._deselectReaction({ icon, userReactUUID, userId, selectedReaction })
                 } else {
-                    this._toggleReaction({ icon, userReactType, userId, selectedReaction })
+                    this._toggleReaction({ icon, userReactUUID, userId, selectedReaction })
                 }
             } else {
                 this._addReaction({ icon, selectedReaction, userId })
@@ -998,21 +1013,21 @@ buildfire.components.reactions = (() => {
         _addReaction(options) {
             let { icon, selectedReaction, userId, fromQueue } = options;
 
-            this._hideReactionInconsBox({ newIcon: icon, fromQueue })
+            this._hideReactionIconsBox({ newIcon: icon, fromQueue })
 
-            let reactOptions = { itemId: selectedReaction.itemId, userId, reactionType: selectedReaction.type, allowMultipleReactions: this.allowMultipleReactions }
+            let reactOptions = { itemId: selectedReaction.itemId, userId, reactionUUID: selectedReaction.reactionUUID, allowMultipleReactions: this.allowMultipleReactions }
             if (this.isPending) {
                 this.nextRequest = { type: 'add', options }
             } else {
                 this.isPending = true;
                 Reactions.react(reactOptions, (error, result) => {
                     if (error) {
-                        this._hideReactionInconsBox({ oldIcon: icon });
+                        this._hideReactionIconsBox({ oldIcon: icon });
                         return console.error('Error while adding new Reaction: ' + error)
                     } else if (result) {
                         if (result.status === 'added') {
                             this.container.setAttribute('bf-user_react-id', result.data.data.id);
-                            let options = { reactionType: selectedReaction.type, itemId: selectedReaction.itemId, userId }
+                            let options = { reactionUUID: selectedReaction.reactionUUID, itemId: selectedReaction.itemId, userId }
                             ReactionsSummaries.increment(options, (err, res) => {
                                 this._checkPendingRequest();
 
@@ -1024,7 +1039,7 @@ buildfire.components.reactions = (() => {
                                 }
                             });
                         } else if (result.status === 'updated') {
-                            let options = { reactionType: selectedReaction.type, itemId: selectedReaction.itemId, userId }
+                            let options = { reactionUUID: selectedReaction.reactionUUID, itemId: selectedReaction.itemId, userId }
                             ReactionsSummaries.increment(options, (err, res) => {
                                 this._checkPendingRequest();
 
@@ -1040,42 +1055,42 @@ buildfire.components.reactions = (() => {
                             this._checkPendingRequest();
                             // nothing will be happened
                         }
-                        this.onReaction({ status: 'add', reactionType: selectedReaction.type, itemId: selectedReaction.itemId, userId })
+                        this.onReaction({ status: 'add', reactionID: selectedReaction.reactionUUID, itemId: selectedReaction.itemId, userId })
                     }
                 });
             }
         }
 
         _toggleReaction(options) {
-            let { icon, userReactType, userId, selectedReaction, fromQueue } = options;
+            let { icon, userReactUUID, userId, selectedReaction, fromQueue } = options;
 
             let itemId = selectedReaction.itemId
-            this._hideReactionInconsBox({ fromQueue, newIcon: icon, oldIcon: this.container.querySelector(`[bf-reactions-type="${userReactType}"]`) });
+            this._hideReactionIconsBox({ fromQueue, newIcon: icon, oldIcon: this.container.querySelector(`[bf-reactions-uuid="${userReactUUID}"]`) });
 
             if (this.isPending) {
                 this.nextRequest = { type: 'update', options }
             } else {
                 this.isPending = true;
-                let reactOptions = { itemId, userId, reactionType: selectedReaction.type, reactionId: selectedReaction.reactionId, allowMultipleReactions: this.allowMultipleReactions }
+                let reactOptions = { itemId, userId, reactionUUID: selectedReaction.reactionUUID, reactionId: selectedReaction.reactionId, allowMultipleReactions: this.allowMultipleReactions }
                 Reactions.unReactReact(reactOptions, (error, result) => {
                     if (error) {
-                        this._hideReactionInconsBox({ oldIcon: icon, newIcon: this.container.querySelector(`[bf-reactions-type="${userReactType}"]`) });
+                        this._hideReactionIconsBox({ oldIcon: icon, newIcon: this.container.querySelector(`[bf-reactions-uuid="${userReactUUID}"]`) });
                         return console.error('Error while updated the Reaction: ' + error)
                     } else if (result) {
                         // reaction updated successfully 
                         if (result.status === 'updated') {
 
                             // decrement for the old type and increment the new one
-                            ReactionsSummaries.decrement({ itemId, reactionType: userReactType }, (err, res) => {
+                            ReactionsSummaries.decrement({ itemId, reactionUUID: selectedReaction.reactionUUID }, (err, res) => {
                                 this._checkPendingRequest();
                                 if (err) return console.error(err)
                             });
-                            ReactionsSummaries.increment({ itemId, reactionType: selectedReaction.type, userId }, (err, res) => {
+                            ReactionsSummaries.increment({ itemId, reactionUUID: selectedReaction.reactionUUID, userId }, (err, res) => {
                                 this._checkPendingRequest();
                                 if (err) return console.error(err)
                             });
                         } else if (result.status === 'added') {
-                            ReactionsSummaries.increment({ itemId, reactionType: userReactType, userId }, (err, res) => {
+                            ReactionsSummaries.increment({ itemId, reactionUUID: selectedReaction.reactionUUID, userId }, (err, res) => {
                                 this._checkPendingRequest();
                                 if (err) return console.error(err)
                             });
@@ -1084,22 +1099,22 @@ buildfire.components.reactions = (() => {
                             this._checkPendingRequest();
                             // nothing will be happened
                         }
-                        this.onReaction({ status: 'update', reactionType: selectedReaction.type, itemId, userId })
+                        this.onReaction({ status: 'update', reactionUUID: selectedReaction.reactionUUID, itemId, userId })
                     }
                 })
             }
         }
 
         _deselectReaction(options) {
-            let { icon, userReactType, userId, selectedReaction, fromQueue } = options;
+            let { icon, userReactUUID, userId, selectedReaction, fromQueue } = options;
 
             let reactionId = selectedReaction.reactionId;
             let itemId = selectedReaction.itemId;
-            let reactionType = userReactType;
+            let reactionUUID = userReactUUID;
 
-            let reactOptions = { itemId, userId, reactionId, reactionType, allowMultipleReactions: this.allowMultipleReactions }
+            let reactOptions = { itemId, userId, reactionId, reactionUUID, allowMultipleReactions: this.allowMultipleReactions }
 
-            this._hideReactionInconsBox({ oldIcon: icon, fromQueue });
+            this._hideReactionIconsBox({ oldIcon: icon, fromQueue });
 
             if (this.isPending) {
                 this.nextRequest = { type: 'delete', options }
@@ -1107,13 +1122,13 @@ buildfire.components.reactions = (() => {
                 this.isPending = true;
                 Reactions.unReact(reactOptions, (error, result) => {
                     if (error) {
-                        this._hideReactionInconsBox({ newIcon: icon });
+                        this._hideReactionIconsBox({ newIcon: icon });
                         return console.error('Error while deleting the Reaction: ' + error)
                     } else if (result) {
                         if (result.status === 'deleted') {
 
                             /* Reaction deleted successfully */
-                            ReactionsSummaries.decrement({ itemId, reactionType }, (err, res) => {
+                            ReactionsSummaries.decrement({ itemId, reactionUUID }, (err, res) => {
                                 this._checkPendingRequest();
                                 if (err) return console.error(err)
                             });
@@ -1121,7 +1136,7 @@ buildfire.components.reactions = (() => {
                             this._checkPendingRequest();
                             // nothing will be happened
                         }
-                        this.onReaction({ status: 'delete', reactionType: userReactType, itemId, userId })
+                        this.onReaction({ status: 'delete', reactionUUID, itemId, userId })
                     }
                 });
             }
@@ -1145,7 +1160,7 @@ buildfire.components.reactions = (() => {
             this.nextRequest = {};
         }
 
-        _hideReactionInconsBox(options) {
+        _hideReactionIconsBox(options) {
             let { newIcon, oldIcon, fromQueue } = options;
 
             this._hideReactionIcons();
@@ -1155,13 +1170,13 @@ buildfire.components.reactions = (() => {
 
                 if (oldIcon) {
                     oldIcon.classList.remove('reacted');
-                    this.container.setAttribute('bf-user_react-type', '');
+                    this.container.setAttribute('bf-user_react-uuid', '');
                     this.container.setAttribute('bf-user_react-id', '');
                 }
 
                 if (newIcon) {
                     newIcon.classList.add('reacted');
-                    this.container.setAttribute('bf-user_react-type', newIcon.getAttribute('bf-reactions-type'));
+                    this.container.setAttribute('bf-user_react-uuid', newIcon.getAttribute('bf-reactions-uuid'));
 
                     let image = mainButton.querySelector('img');
                     image.src = newIcon.getAttribute('bf-reactions-reacted-url');
@@ -1188,7 +1203,7 @@ buildfire.components.reactions = (() => {
                     reactionsCountContainer.innerHTML = newCount;
 
                     let image = mainButton.querySelector('img');
-                    image.src = this.reactionType[0].unSelectedUrl;
+                    image.src = this.reactionsArr[0].unSelectedUrl;
                     image.classList.add('reactions-show-main-icon');
                     setTimeout(() => {
                         image.classList.remove('reactions-show-main-icon');
@@ -1220,7 +1235,7 @@ buildfire.components.reactions = (() => {
             }
         }
 
-        _showUsersList(itemId, reactionType) {
+        _showUsersList(itemId, reactionType) { // need to be checked
             let listItems = [];
             buildfire.spinner.show();
 
