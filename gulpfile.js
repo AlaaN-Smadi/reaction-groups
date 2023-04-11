@@ -95,8 +95,6 @@ const jsTasks=[
 jsTasks.forEach(function(task){
     gulp.task(task.name, function() {
         return gulp.src(task.src,{base: '.'})
-
-
             /// merge all the JS files together. If the
             /// order matters you can pass each file to the function
             /// in an array in the order you like
@@ -108,15 +106,8 @@ jsTasks.forEach(function(task){
 			.pipe(minify())
             ///output here
             .pipe(gulp.dest(destinationFolder + task.dest));
-
     });
-
 });
-
-/*
-Define a task called "mediaPlayer" that take minified video JS files and returns 
-them to widget/mediaPlayer
-*/
 
 gulp.task('clean',function(){
     return del([destinationFolder],{force: true});
@@ -132,7 +123,7 @@ gulp.task('controlHTML', function(){
         .pipe(htmlReplace({
             bundleJSFiles:"scripts-min.js?v=" + version
             ,bundleCSSFiles:"styles.min.css?v=" + version
-			//data, data access, tests and analytics
+			//data, data access, tests
 			,bundleDataJSFiles:"../../widget/js/data/scripts-min.js?v=" + version
         }))
         .pipe(minHTML({removeComments:true,collapseWhitespace:true}))
