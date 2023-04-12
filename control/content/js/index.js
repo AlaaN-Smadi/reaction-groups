@@ -157,13 +157,15 @@ const ReactionsList = {
         this._addListeners();
 
         this._initList(options);
-        State.activeGroup = options;
+        if(options.name){
+            State.activeGroup = JSON.parse(JSON.stringify(options));
+        }
 
         APIHandlers.sendToWidget(true, this.reactions);
     },
 
     _addListeners() {
-        this.uiElements.cancle.addEventListener('click', () => {
+        this.uiElements.cancel.addEventListener('click', () => {
             if (!State.warn) return Views.navigate('groupList');
             else {
                 let cancelOptions = {
@@ -177,6 +179,8 @@ const ReactionsList = {
                     if (isConfirmed) {
                         if (e) console.error(e);
                         if (isConfirmed) {
+                            GroupsList.groups[State.groupIndex] = JSON.parse(JSON.stringify(State.activeGroup));
+
                             let groups = GroupsList.groups, reactions = [];
                             if (groups && groups[0] && groups[0].reactions) {
                                 reactions = groups[0].reactions;
@@ -265,8 +269,9 @@ const ReactionsList = {
         this.list.init(this.reactions);
 
         if (!this.reactions.length) return this.updateEmptyState("empty");
-        else return this.updateEmptyState("list printed");
+        else this.updateEmptyState("list printed");
 
+        if(this.reactions.length===5) this.uiElements.addBtn.setAttribute('disabled', 'disabled');
     },
 
     _initUIElements() {
@@ -277,7 +282,7 @@ const ReactionsList = {
             sortableList: document.getElementById('reactionsSortableList'),
             inputGroupName: document.getElementById('groupName'),
             groupNameError: document.getElementById('group-name-error'),
-            cancle: document.getElementById('cancleGroup'),
+            cancel: document.getElementById('cancelGroup'),
             save: document.getElementById('saveGroup'),
         }
     },
@@ -310,6 +315,8 @@ const ReactionsList = {
                         (e, isConfirmed) => {
                             if (e) console.error(e);
                             if (isConfirmed) {
+                                GroupsList.groups[State.groupIndex] = JSON.parse(JSON.stringify(State.activeGroup));
+                                
                                 let groups = GroupsList.groups, reactions = [];
                                 if (groups && groups[0] && groups[0].reactions) {
                                     reactions = groups[0].reactions;

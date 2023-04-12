@@ -21,7 +21,7 @@ buildfire.components.reactions = (() => {
             return "$$reactions";
         }
 
-        // options: {itemId, userId, reactionId=null, reactionUUID}
+        // options: {itemId, userId, reactionUUID}
         static _insert(options, callback) {
             let reaction = new Reaction({
                 itemId: options.itemId,
@@ -66,15 +66,15 @@ buildfire.components.reactions = (() => {
 
             if (options.allowMultipleReactions) {
                 if (options.operation == "add" || options.operation == "toggle") {
-                    obj = { $addToSet: { reactions: { reactionUUID: options.reactionUUID, createdOn: new Date() } } }
+                    obj = { $addToSet: { reactions: { reactionUUID: options.reactionUUID, createdOn: new Date() }, "_buildfire.index.array1": { string1: "reactionUUID-" + options.reaction.itemId + "-" + options.reactionUUID } } }
                 } else if (options.operation == "remove") {
                     obj = { $pull: { reactions: { reactionUUID: options.reactionUUID } } }
                 }
             } else {
                 if (options.operation == "add" || options.operation == "toggle") {
-                    obj = { $set: { reactions: [{ reactionUUID: options.reactionUUID, createdOn: new Date() }] } }
+                    obj = { $set: { reactions: [{ reactionUUID: options.reactionUUID, createdOn: new Date() }], "_buildfire.index.array1": [{ string1: "reactionUUID-" + options.reaction.itemId + "-" + options.reactionUUID }] } }
                 } else if (options.operation == "remove") {
-                    obj = { $set: { reactions: [] } }
+                    obj = { $set: { reactions: [], "_buildfire.index.array1": [] } }
                 }
             }
 
@@ -206,11 +206,11 @@ buildfire.components.reactions = (() => {
                             operation: "add",
                             allowMultipleReactions: options.allowMultipleReactions
                         };
-                        this._update(updateOptions, (err, result) => {
+                        this._update(updateOptions, (err, res) => {
                             if (err) {
                                 return callback(err);
                             }
-                            return callback(null, { status: 'updated', data: result })
+                            return callback(null, { status: 'updated', data: res, oldData:result.data  })
                         })
                     }
                 } else {
@@ -258,7 +258,6 @@ buildfire.components.reactions = (() => {
 
                         // if the reaction type that we are going to remove is the only one left, delte the whole records
                         if (reaction.reactions.length == 1) {
-
                             buildfire.appData.delete(reaction.id, this.TAG, (err, result) => {
                                 if (err && err.code == "NOTFOUND") {
                                     return callback(null, { status: 'noAction' });
@@ -292,7 +291,7 @@ buildfire.components.reactions = (() => {
                 }
             })
         }
-        // options: { itemId, reactionUUID, pageIndex, pageSize }
+        // options: { itemId, pageIndex, pageSize }
         static get(options, callback) { // fetch who reacted for specific item
             if (!callback || typeof callback !== 'function') {
                 return console.error("callback must be a function!");
@@ -301,7 +300,7 @@ buildfire.components.reactions = (() => {
             if (!options) {
                 return callback("missing get options!");
             }
-            let { itemId, reactionUUID, pageIndex, pageSize } = options;
+            let { itemId, pageIndex, pageSize } = options;
 
             if (!itemId) {
                 return callback("Invalid get options!");
@@ -315,18 +314,12 @@ buildfire.components.reactions = (() => {
                 pageSize = 50;
             }
 
-            let filter = {};
-            if (reactionUUID) {
-                filter = { "_buildfire.index.array1.string1": "reactionUUID-" + itemId + "-" + reactionUUID }
-            } else {
-                // get all types
-                // put all available types in an array as [itemId-type, ...]
-                let inArr = ReactionsTypes.itemsReactionsTypes[itemId].map(reaction => {
-                    return `reactionUUID-${itemId}-${reaction.id}`
-                })
+            // get all available types for this item
+            let inArr = ReactionsTypes.itemsReactionsTypes[itemId].map(reaction => {
+                return `reactionUUID-${itemId}-${reaction.id}`
+            })
 
-                filter = { "_buildfire.index.array1.string1": { $in: inArr } }
-            }
+            let filter = { "_buildfire.index.array1.string1": { $in: inArr } }
 
             buildfire.appData.search(
                 {
@@ -607,14 +600,14 @@ buildfire.components.reactions = (() => {
             });
         }
 
-        static getReactionsTypes(options, callback){
-            const {groupName, itemId} = options;
+        static getReactionsTypes(options, callback) {
+            const { groupName, itemId } = options;
 
             if (!callback || typeof callback !== 'function') {
                 return console.error("callback must be a function!");
             }
 
-            if(!itemId){
+            if (!itemId) {
                 return callback("missing itemId", null);
             }
 
@@ -634,19 +627,19 @@ buildfire.components.reactions = (() => {
                 return callback('No reactions added yet', null)
             }
 
-            const allActiveReactions = group.reactions.filter(reaction=>(reaction.isActive==true && reaction.selectedUrl && reaction.unSelectedUrl));
+            const allActiveReactions = group.reactions.filter(reaction => (reaction.isActive == true && reaction.selectedUrl && reaction.unSelectedUrl));
             this.itemsReactionsTypes[itemId] = allActiveReactions;
 
             return callback(null, allActiveReactions);
         }
 
         static validateReactionTypes(options, callback) {
-            const {reactionUUID, itemId} = options;
+            const { reactionUUID, itemId } = options;
 
-            if(!reactionUUID){
+            if (!reactionUUID) {
                 return callback('Missing Reaction ID');
             }
-            if(!itemId){
+            if (!itemId) {
                 return callback('Missing itemId');
             }
 
@@ -715,15 +708,15 @@ buildfire.components.reactions = (() => {
                     let totalReactionCount = 0;
                     if (container) {
                         summery.data.reactions.forEach(reaction => {
-                            ReactionsTypes.validateReactionTypes({reactionUUID:reaction.reactionUUID, itemId:summery.data.itemId}, (err,res)=>{
-                                if(err) console.error(err);
+                            ReactionsTypes.validateReactionTypes({ reactionUUID: reaction.reactionUUID, itemId: summery.data.itemId }, (err, res) => {
+                                if (err) console.error(err);
                                 else totalReactionCount += reaction.count;
                             })
                         })
                         totalReactionCount = totalReactionCount > 0 ? totalReactionCount : 0;
 
                         let totalCountContainer = container.querySelector(`[bf-reactions-total-count]`);
-                        if(totalCountContainer){
+                        if (totalCountContainer) {
                             totalCountContainer.setAttribute('bf-reactions-total-count', totalReactionCount);
                             totalCountContainer.innerHTML = totalReactionCount;
                         }
@@ -741,7 +734,7 @@ buildfire.components.reactions = (() => {
             reactions.forEach(reaction => {
                 // check if the reaction is valid or not
                 if (reaction && reaction.data && reaction.data.itemId && reaction.data.reactions && reaction.data.reactions.length) {
-                    ReactionsTypes.validateReactionTypes({itemId:reaction.data.itemId, reactionUUID:reaction.data.reactions[0].reactionUUID}, (e, r) => {
+                    ReactionsTypes.validateReactionTypes({ itemId: reaction.data.itemId, reactionUUID: reaction.data.reactions[0].reactionUUID }, (e, r) => {
                         if (e) {
                             return console.error(e);
                         }
@@ -878,11 +871,11 @@ buildfire.components.reactions = (() => {
             this.allowMultipleReactions = false;
 
             if (!ReactionsTypes.groups.length) {
-                ReactionsTypes.getReactionsGroups({}, (err,res)=>{
-                    if(err) return console.error(err);
+                ReactionsTypes.getReactionsGroups({}, (err, res) => {
+                    if (err) return console.error(err);
 
-                    ReactionsTypes.getReactionsTypes({itemId:this.itemId, groupName:this.groupName}, (error,response)=>{
-                        if(error){
+                    ReactionsTypes.getReactionsTypes({ itemId: this.itemId, groupName: this.groupName }, (error, response) => {
+                        if (error) {
                             return console.error(error);
                         }
 
@@ -890,25 +883,34 @@ buildfire.components.reactions = (() => {
                         this._init();
                     })
                 })
-            } else if(!ReactionsTypes.itemsReactionsTypes[this.itemId]){
-                ReactionsTypes.getReactionsTypes({itemId:this.itemId, groupName:this.groupName}, (error,response)=>{
-                    if(error){
+            } else if (!ReactionsTypes.itemsReactionsTypes[this.itemId] || !ReactionsTypes.itemsReactionsTypes[this.itemId].length) {
+                ReactionsTypes.getReactionsTypes({ itemId: this.itemId, groupName: this.groupName }, (error, response) => {
+                    if (error) {
                         return console.error(error);
                     }
 
                     this.reactionsArr = response;
                     this._init();
                 })
-            }else{
+            } else {
                 this.reactionsArr = ReactionsTypes.itemsReactionsTypes[this.itemId];
                 this._init();
             }
         }
 
         _init() {
-            if(this.reactionsArr.length){
+            if (this.reactionsArr.length) {
+                // crop reaction images 
+                this.reactionsArr = this.reactionsArr.map(reaction => {
+                    let selectedUrl = buildfire.imageLib.cropImage(reaction.selectedUrl, { size: "half_width", aspect: "1:1" }),
+                        unSelectedUrl = buildfire.imageLib.cropImage(reaction.unSelectedUrl, { size: "half_width", aspect: "1:1" });
+
+                    return ({ ...reaction, selectedUrl, unSelectedUrl });
+                })
                 this._buildComponent();
                 State.debounce({ itemId: this.itemId, getUsersData: true, getSummariesData: true });
+            } else {
+                return console.error('No Reactions added yet');
             }
         }
 
@@ -941,7 +943,7 @@ buildfire.components.reactions = (() => {
                 // show user reactions list
                 if (this.showUsersReactions) {
                     reactionCountBtn.addEventListener('click', () => {
-                        this._showUsersList(this.itemId);
+                        this._showUsersList();
                     })
                 }
             }
@@ -1033,7 +1035,7 @@ buildfire.components.reactions = (() => {
 
             let selectedReaction = {
                 reactionUUID: newReactionUUID,
-                reactionId: this.container.getAttribute('bf-user_react-id'),
+                reactionId: this.container.getAttribute('bf-user_react-id') || null,
                 itemId: this.container.getAttribute('bf-reactions-itemid'),
             }
 
@@ -1064,7 +1066,7 @@ buildfire.components.reactions = (() => {
                         return console.error('Error while adding new Reaction: ' + error)
                     } else if (result) {
                         if (result.status === 'added') {
-                            this.container.setAttribute('bf-user_react-id', result.data.data.id);
+                            this.container.setAttribute('bf-user_react-id', result.data.id);
                             let options = { reactionUUID: selectedReaction.reactionUUID, itemId: selectedReaction.itemId, userId }
                             ReactionsSummaries.increment(options, (err, res) => {
                                 this._checkPendingRequest();
@@ -1077,8 +1079,12 @@ buildfire.components.reactions = (() => {
                                 }
                             });
                         } else if (result.status === 'updated') {
-                            let options = { reactionUUID: selectedReaction.reactionUUID, itemId: selectedReaction.itemId, userId }
-                            ReactionsSummaries.increment(options, (err, res) => {
+                            ReactionsSummaries.decrement({ itemId: selectedReaction.itemId, reactionUUID: result.oldData.reactions[0].reactionUUID }, (err, res) => {
+                                if (err) return console.error(err)
+                            });
+
+                            let incrementOptions = { reactionUUID: selectedReaction.reactionUUID, itemId: selectedReaction.itemId, userId }
+                            ReactionsSummaries.increment(incrementOptions, (err, res) => {
                                 this._checkPendingRequest();
 
                                 if (err) return console.error(err);
@@ -1117,9 +1123,8 @@ buildfire.components.reactions = (() => {
                     } else if (result) {
                         // reaction updated successfully 
                         if (result.status === 'updated') {
-
                             // decrement for the old type and increment the new one
-                            ReactionsSummaries.decrement({ itemId, reactionUUID: selectedReaction.reactionUUID }, (err, res) => {
+                            ReactionsSummaries.decrement({ itemId, reactionUUID: userReactUUID }, (err, res) => {
                                 this._checkPendingRequest();
                                 if (err) return console.error(err)
                             });
@@ -1128,6 +1133,7 @@ buildfire.components.reactions = (() => {
                                 if (err) return console.error(err)
                             });
                         } else if (result.status === 'added') {
+                            this.container.setAttribute('bf-user_react-id', result.data.id);
                             ReactionsSummaries.increment({ itemId, reactionUUID: selectedReaction.reactionUUID, userId }, (err, res) => {
                                 this._checkPendingRequest();
                                 if (err) return console.error(err)
@@ -1164,7 +1170,7 @@ buildfire.components.reactions = (() => {
                         return console.error('Error while deleting the Reaction: ' + error)
                     } else if (result) {
                         if (result.status === 'deleted') {
-
+                            this.container.setAttribute('bf-user_react-id', '');
                             /* Reaction deleted successfully */
                             ReactionsSummaries.decrement({ itemId, reactionUUID }, (err, res) => {
                                 this._checkPendingRequest();
@@ -1272,7 +1278,7 @@ buildfire.components.reactions = (() => {
             }
         }
 
-        _showUsersList(itemId, reactionType) { // need to be checked
+        _showUsersList() {
             let listItems = [];
             buildfire.spinner.show();
 
@@ -1280,26 +1286,30 @@ buildfire.components.reactions = (() => {
                 let reaction = reactions[index];
 
                 let reactionObject = this.reactionsArr.find(reactionType => reactionType.id === reaction.data.reactions[0].reactionUUID);
-                let url = reactionObject.selectedUrl;
-
-                buildfire.auth.getUserProfile({ userId: reaction.data.userId }, (err, user) => {
-                    if (err) return console.error(err);
-                    listItems.push({
-                        text:   `<div style="display: flex; gap: 1rem; align-items: center;">
-                                    <img style="border-radius:100%; width:42px; height:42px;" src="${user.imageUrl}" alt="user image" />
-                                    <p style="overflow:auto; max-width: 75%; margin:0 !important;">${user.displayName ? user.displayName : user.firstName ? user.firstName : 'User'}</p>
-                                    <span style="position: absolute;bottom: 0;left: 3px;" class="material-icons material-icons-sharp"><img style="width: 2rem;height: 2rem;" src="${url}" /></span>
-                                </div>`
-                    })
-                    if (index == reactions.length - 1) {
-                        this._openDrawer(listItems);
-                    } else {
-                        callBack(reactions, index + 1, _setUsersList)
-                    }
-                });
+                if(reactionObject){
+                    let url = reactionObject.selectedUrl;
+    
+                    buildfire.auth.getUserProfile({ userId: reaction.data.userId }, (err, user) => {
+                        if (err) return console.error(err);
+                        listItems.push({
+                            text: `<div style="display: flex; gap: 1rem; align-items: center;">
+                                        <img style="border-radius:100%; width:42px; height:42px;" src="${user.imageUrl}" alt="user image" />
+                                        <p style="overflow:auto; max-width: 75%; margin:0 !important;">${user.displayName ? user.displayName : user.firstName ? user.firstName : 'User'}</p>
+                                        <span style="position: absolute;bottom: 0;left: 3px;" class="material-icons material-icons-sharp"><img style="width: 2rem;height: 2rem;" src="${url}" /></span>
+                                    </div>`
+                        })
+                        if (index == reactions.length - 1) {
+                            this._openDrawer(listItems);
+                        } else {
+                            callBack(reactions, index + 1, _setUsersList)
+                        }
+                    });
+                }else if (index == reactions.length - 1) {
+                    this._openDrawer(listItems);
+                }
             }
 
-            let options = { itemId, pageIndex: 0, pageSize: 50 };
+            let options = { itemId: this.itemId, pageIndex: 0, pageSize: 50 };
             Reactions.get(options, (error, result) => {
                 if (error) { }
                 else if (result.length) {

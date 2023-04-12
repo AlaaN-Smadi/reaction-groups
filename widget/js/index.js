@@ -1,6 +1,7 @@
 'use strict';
 
 const ComponentReactionsTypes = window["reactionsComponentTestPart"].ReactionsTypes;
+const itemId = '2457ffb3-11a1-4e3f-ba46-b1cdaea055c5';
 
 function messageHandler() {
     buildfire.messaging.onReceivedMessage = (message) => {
@@ -8,10 +9,10 @@ function messageHandler() {
 
         if (reactions && Array.isArray(reactions)) {
             reactions = reactions.filter(reaction => (reaction.isActive && reaction.selectedUrl && reaction.unSelectedUrl));
-            ComponentReactionsTypes.itemsReactionsTypes["itemId_2"] = reactions;
+            ComponentReactionsTypes.itemsReactionsTypes[itemId] = reactions;
             ComponentReactionsTypes.groups = groups;
 
-            document.getElementById('main-reactions-container').innerHTML = `<div bf-reactions-itemid="itemId_2" bf-reactions-showCount="true" bf-reactions-showUsersReactions="true"></div>`;
+            document.getElementById('main-reactions-container').innerHTML = `<div bf-reactions-itemid=${itemId}></div>`;
         }
 
         setTimeout(() => {

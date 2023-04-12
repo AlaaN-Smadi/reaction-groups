@@ -76,8 +76,8 @@ class SortableListUI {
 
     deleteItem(type, divRow, propertyName, propertyValue) {
         let deleteOptions = {
-            title: `Delete ${type === 'reaction' ? 'Reactions' : 'Groups'}`,
-            message: `Are you sure you want to delete ${type === 'reaction' ? 'reaction' : 'group'}?`,
+            title: `Delete ${type === 'reactions' ? 'Reaction' : 'Group'}`,
+            message: `Are you sure you want to delete ${type === 'reactions' ? 'this reaction' : propertyValue + ' group'}?`,
             confirmButton: { text: "Delete", type: "danger" },
         }
         buildfire.dialog.confirm(deleteOptions, (e, isConfirmed) => {
@@ -128,7 +128,7 @@ class SortableListUI {
     onUnSelectedImageChange(item, imgSrc, index) {
 
     }
-    onAddItem(){}
+    onAddItem() { }
 }
 
 class groupListUI extends SortableListUI {
@@ -263,9 +263,11 @@ class reactionListUI extends SortableListUI {
         toggleButton.appendChild(toggleInput);
         toggleButton.appendChild(toggleLabel);
 
-        selectedImage.innerHTML = item.selectedUrl ? `<img src="${item.selectedUrl}" alt="Selected Icon" />` : '<span class="add-icon">+</span>';
+        let croppedSelected = buildfire.imageLib.cropImage(item.selectedUrl,{ size: "half_width", aspect: "1:1" });
+        let croppedUnSelected = buildfire.imageLib.cropImage(item.unSelectedUrl,{ size: "half_width", aspect: "1:1" });
+        selectedImage.innerHTML = item.selectedUrl ? `<img src="${croppedSelected}" alt="Selected Icon" />` : '<span class="add-icon">+</span>';
         selectedTitle.innerHTML = 'Selected';
-        unSelectedImage.innerHTML = item.unSelectedUrl ? `<img src="${item.unSelectedUrl}" alt="Selected Icon" />` : '<span class="add-icon">+</span>';
+        unSelectedImage.innerHTML = item.unSelectedUrl ? `<img src="${croppedUnSelected}" alt="Selected Icon" />` : '<span class="add-icon">+</span>';
         unSelectedTitle.innerHTML = 'Unselected';
 
         // Append elements to the DOM
@@ -341,32 +343,34 @@ class reactionListUI extends SortableListUI {
     }
 
     onSelectedImageChange = (item, divRow, src) => {
-        let imageContainer = divRow.querySelector('.selected-image-container')
-        imageContainer.innerHTML = `<img src="${src}" alt="UnSelected Icon" />`;
+        let croppedImage = buildfire.imageLib.cropImage(src,{ size: "half_width", aspect: "1:1" });
+        let imageContainer = divRow.querySelector('.selected-image-container');
+        imageContainer.innerHTML = `<img src="${croppedImage}" alt="UnSelected Icon" />`;
 
         item.selectedUrl = src;
-        this.sortableList.items = this.sortableList.items.map(_item=>{
-            if(_item.id!==item.id) return _item;
-            else{
-                return({
-                    ..._item, 
-                    selectedUrl:src
+        this.sortableList.items = this.sortableList.items.map(_item => {
+            if (_item.id !== item.id) return _item;
+            else {
+                return ({
+                    ..._item,
+                    selectedUrl: src
                 })
             }
         })
     }
 
     onUnSelectedImageChange = (item, divRow, src) => {
+        let croppedImage = buildfire.imageLib.cropImage(src,{ size: "half_width", aspect: "1:1" });
         let imageContainer = divRow.querySelector('.un-selected-image-container')
-        imageContainer.innerHTML = `<img src="${src}" alt="UnSelected Icon" />`;
+        imageContainer.innerHTML = `<img src="${croppedImage}" alt="UnSelected Icon" />`;
 
         item.unSelectedUrl = src;
-        this.sortableList.items = this.sortableList.items.map(_item=>{
-            if(_item.id!==item.id) return _item;
-            else{
-                return({
-                    ..._item, 
-                    unSelectedUrl:src
+        this.sortableList.items = this.sortableList.items.map(_item => {
+            if (_item.id !== item.id) return _item;
+            else {
+                return ({
+                    ..._item,
+                    unSelectedUrl: src
                 })
             }
         })
