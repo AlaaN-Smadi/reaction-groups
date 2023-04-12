@@ -9,10 +9,11 @@
   <link rel="stylesheet" href="./style/style.css" />
   <link rel="stylesheet" href="./component/reactions.css" />
   <!-- endbuild -->  
+  <link rel="stylesheet" href="../../../styles/material-icons.css" />
 
   <!-- JS -->
-  <script src="https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/umd/uuidv4.min.js"></script>
   <script src="../../../scripts/buildfire.js"></script>
+  <script src="../../../scripts/buildfire/components/drawer/drawer.js"></script>
 
   <!-- build:bundleDataJSFiles  -->
   <script src="./data/ReactionsGroup.js"></script>
@@ -40,10 +41,24 @@
       <p>Which one is your favorite?</p>
     </div>
     <div class="imageContainer"><img
-        src="https://www.nobroker.in/blog/wp-content/uploads/2022/07/Backyard-Garden-Ideas-1.jpg" alt="post image" />
+        src="../../../styles/media/holder-2x1.png" alt="post image" />
     </div>
-    <div id="main-reactions-container" class="reactionsContainer">
-      <div bf-reactions-itemid="itemId_2" bf-reactions-showCount="true" bf-reactions-showUsersReactions="false"></div>
+    <div class="post-footer">
+      <div id="main-reactions-container" class="reactionsContainer">
+        <div bf-reactions-itemid="itemId_2" bf-reactions-showCount="true" bf-reactions-showUsersReactions="true"></div>
+      </div>
+      <div class="footer-icons">
+        <span class="material-icons material-icons-outlined mirror">chat_bubble_outline</span>
+        <span>0</span>
+      </div>
+      <div class="footer-icons">
+        <span class="material-icons material-icons-outlined">repeat</span>
+        <span>0</span>
+      </div>
+      <div class="footer-icons">
+        <span class="material-icons material-icons-outlined">share</span>
+        <span>0</span>
+      </div>
     </div>
   </div>
 

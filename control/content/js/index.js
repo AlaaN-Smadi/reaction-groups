@@ -9,7 +9,7 @@ const State = {
 }
 
 const APIHandlers = {
-    savingTimer: null, sendingTimer:null,
+    savingTimer: null, sendingTimer: null,
 
     updateGroups() {
         clearTimeout(this.savingTimer);
@@ -24,7 +24,11 @@ const APIHandlers = {
                 if (State.activePage !== 'groupList') {
                     Views.navigate('groupList');
                 }
-                this.sendToWidget(false, GroupsList.groups[0].reactions);
+                let groups = GroupsList.groups, reactions = [];
+                if (groups && groups[0] && groups[0].reactions) {
+                    reactions = groups[0].reactions;
+                }
+                this.sendToWidget(false, reactions);
             })
         }, 300)
     },
@@ -37,7 +41,6 @@ const APIHandlers = {
                 GroupsList.groups = [];
                 GroupsList.list.init([]);
                 GroupsList.updateEmptyState("empty");
-
 
                 let reactionGroups = new ReactionsGroup({ groups: [] });
 
@@ -52,7 +55,7 @@ const APIHandlers = {
             } else {
                 GroupsList.groups = res.groups;
                 GroupsList.list.init(res.groups);
-                this.sendToWidget(false, GroupsList.groups[0].reactions);
+
                 return GroupsList.updateEmptyState("list printed");
             }
         })
@@ -65,8 +68,15 @@ const APIHandlers = {
     sendToWidget(openReactionList, reactions) {
         clearTimeout(this.sendingTimer);
         this.sendingTimer = setTimeout(() => {
+            let groups = GroupsList.groups;
+            if (!groups.length) {
+                groups = [{
+                    name: ReactionsList.uiElements.inputGroupName?ReactionsList.uiElements.inputGroupName.value:'',
+                    reactions: reactions
+                }]
+            }
             buildfire.messaging.sendMessageToWidget({
-                openReactionList, reactions
+                openReactionList, reactions, groups
             });
         }, 300);
     }
@@ -105,9 +115,11 @@ const GroupsList = {
             if (this.groups.length) {
                 this.updateEmptyState("list printed");
                 this.list.init(this.groups);
+                APIHandlers.sendToWidget(false, this.groups[0].reactions);
             } else {
                 this.list.init([]);
                 this.updateEmptyState("empty");
+                APIHandlers.sendToWidget(false, []);
             }
         }
     },
@@ -165,7 +177,12 @@ const ReactionsList = {
                     if (isConfirmed) {
                         if (e) console.error(e);
                         if (isConfirmed) {
-                            APIHandlers.sendToWidget(false, GroupsList.groups[0].reactions);
+                            let groups = GroupsList.groups, reactions = [];
+                            if (groups && groups[0] && groups[0].reactions) {
+                                reactions = groups[0].reactions;
+                            }
+                            APIHandlers.sendToWidget(false, reactions);
+
                             return Views.navigate('groupList');
                         }
                     }
@@ -235,7 +252,6 @@ const ReactionsList = {
                 });
             }
         })
-
     },
 
     _initList(options) {
@@ -276,7 +292,12 @@ const ReactionsList = {
 
                 listItem.onclick = () => {
                     if (!State.warn) {
-                        APIHandlers.sendToWidget(false, GroupsList.groups[0].reactions);
+                        let groups = GroupsList.groups, reactions = [];
+                        if (groups && groups[0] && groups[0].reactions) {
+                            reactions = groups[0].reactions;
+                        }
+                        APIHandlers.sendToWidget(false, reactions);
+
                         return Views.navigate('groupList');
                     }
                     let navigateOptions = {
@@ -288,8 +309,13 @@ const ReactionsList = {
                     buildfire.dialog.confirm(navigateOptions,
                         (e, isConfirmed) => {
                             if (e) console.error(e);
-                            if (isConfirmed){
-                                APIHandlers.sendToWidget(false, GroupsList.groups[0].reactions);
+                            if (isConfirmed) {
+                                let groups = GroupsList.groups, reactions = [];
+                                if (groups && groups[0] && groups[0].reactions) {
+                                    reactions = groups[0].reactions;
+                                }
+                                APIHandlers.sendToWidget(false, reactions);
+
                                 Views.navigate('groupList');
                             }
                         }
@@ -306,9 +332,13 @@ const ReactionsList = {
         if (disabled) return this.uiElements.save.setAttribute('disabled', 'disabled');
         let validGroupName = this.uiElements.inputGroupName.value;
         let validReactionsIcons = true;
-        this.list.sortableList.items.forEach(reaction => {
-            if (!reaction.selectedUrl || !reaction.unSelectedUrl) validReactionsIcons = false;
-        });
+        if (this.reactions.length) {
+            this.reactions.forEach(reaction => {
+                if (!reaction.selectedUrl || !reaction.unSelectedUrl) validReactionsIcons = false;
+            });
+        } else {
+            validReactionsIcons = false;
+        }
 
         if (validGroupName && validReactionsIcons) this.uiElements.save.removeAttribute('disabled');
         else this.uiElements.save.setAttribute('disabled', 'disabled');

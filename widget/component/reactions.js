@@ -55,7 +55,7 @@ buildfire.components.reactions = (() => {
                 return callback("Invalid options, Missing reaction!");
             }
 
-            if (!options.reactionUUID && ReactionsTypes.validateReactionTypes(options.reactionUUID)) {
+            if (!options.reactionUUID) {
                 return callback("Invalid options, Missing reaction ID!");
             }
 
@@ -321,7 +321,7 @@ buildfire.components.reactions = (() => {
             } else {
                 // get all types
                 // put all available types in an array as [itemId-type, ...]
-                let inArr = ReactionsTypes.types.map(reaction => {
+                let inArr = ReactionsTypes.itemsReactionsTypes[itemId].map(reaction => {
                     return `reactionUUID-${itemId}-${reaction.id}`
                 })
 
@@ -583,13 +583,18 @@ buildfire.components.reactions = (() => {
     }
 
     class ReactionsTypes {
-        static types = [];
+        static itemsReactionsTypes = {};
+        static groups = [];
 
         static get TAG() {
             return "$$reactionsGroups";
         }
 
-        static getReactionsTypes(groupName, callback) {
+        static getReactionsGroups(options, callback) {
+            if (!callback || typeof callback !== 'function') {
+                return console.error("callback must be a function!");
+            }
+
             buildfire.appData.get(this.TAG, (err, result) => {
                 if (err) return callback(err)
 
@@ -597,37 +602,55 @@ buildfire.components.reactions = (() => {
                     return callback('No reaction groups added yet', null)
                 }
 
-                let group = null;
-                if (groupName) {
-                    for (let i = 0; i < result.data.groups.length; i++) {
-                        if (result.data.groups[i].name.toLowerCase() === groupName.toLowerCase()) {
-                            group = result.data.groups[i];
-                            break;
-                        }
-                    }
-                } else {
-                    // to get the first group that has active reactions
-                    for(let i=0;i<result.data.groups.length; i++){
-                        let hasActive = result.data.groups[i].reactions.find(reaction=>reaction.isActive===true);
-                        if(hasActive){
-                            group=result.data.groups[i];
-                            break;
-                        }
-                    }
-                }
-
-                if (!group || !group.reactions || !group.reactions.length) {
-                    return callback('No reactions added yet', null)
-                }
-
-                const allActiveReactions = group.reactions.filter(reaction=>(reaction.isActive));
-                this.types = allActiveReactions;
-                return callback(null, allActiveReactions);
+                this.groups = result.data.groups;
+                return callback(null, this.groups);
             });
         }
 
-        static validateReactionTypes(reactionUUID, callback) {
-            let validState = this.types.find(reaction => reaction.id === reactionUUID);
+        static getReactionsTypes(options, callback){
+            const {groupName, itemId} = options;
+
+            if (!callback || typeof callback !== 'function') {
+                return console.error("callback must be a function!");
+            }
+
+            if(!itemId){
+                return callback("missing itemId", null);
+            }
+
+            let group = null;
+            if (groupName) {
+                for (let i = 0; i < this.groups.length; i++) {
+                    if (this.groups[i].name.toLowerCase() === groupName.toLowerCase()) {
+                        group = this.groups[i];
+                        break;
+                    }
+                }
+            } else {
+                group = this.groups[0];
+            }
+
+            if (!group || !group.reactions || !group.reactions.length) {
+                return callback('No reactions added yet', null)
+            }
+
+            const allActiveReactions = group.reactions.filter(reaction=>(reaction.isActive==true && reaction.selectedUrl && reaction.unSelectedUrl));
+            this.itemsReactionsTypes[itemId] = allActiveReactions;
+
+            return callback(null, allActiveReactions);
+        }
+
+        static validateReactionTypes(options, callback) {
+            const {reactionUUID, itemId} = options;
+
+            if(!reactionUUID){
+                return callback('Missing Reaction ID');
+            }
+            if(!itemId){
+                return callback('Missing itemId');
+            }
+
+            let validState = this.itemsReactionsTypes[itemId].find(reaction => reaction.id == reactionUUID);
 
             if (validState) {
                 return callback(null, validState)
@@ -692,13 +715,18 @@ buildfire.components.reactions = (() => {
                     let totalReactionCount = 0;
                     if (container) {
                         summery.data.reactions.forEach(reaction => {
-                            totalReactionCount += reaction.count;
+                            ReactionsTypes.validateReactionTypes({reactionUUID:reaction.reactionUUID, itemId:summery.data.itemId}, (err,res)=>{
+                                if(err) console.error(err);
+                                else totalReactionCount += reaction.count;
+                            })
                         })
                         totalReactionCount = totalReactionCount > 0 ? totalReactionCount : 0;
 
                         let totalCountContainer = container.querySelector(`[bf-reactions-total-count]`);
-                        totalCountContainer.setAttribute('bf-reactions-total-count', totalReactionCount);
-                        totalCountContainer.innerHTML = totalReactionCount;
+                        if(totalCountContainer){
+                            totalCountContainer.setAttribute('bf-reactions-total-count', totalReactionCount);
+                            totalCountContainer.innerHTML = totalReactionCount;
+                        }
                     }
                 })
             })
@@ -713,7 +741,7 @@ buildfire.components.reactions = (() => {
             reactions.forEach(reaction => {
                 // check if the reaction is valid or not
                 if (reaction && reaction.data && reaction.data.itemId && reaction.data.reactions && reaction.data.reactions.length) {
-                    ReactionsTypes.validateReactionTypes(reaction.data.reactions[0].reactionUUID, (e, r) => {
+                    ReactionsTypes.validateReactionTypes({itemId:reaction.data.itemId, reactionUUID:reaction.data.reactions[0].reactionUUID}, (e, r) => {
                         if (e) {
                             return console.error(e);
                         }
@@ -849,29 +877,39 @@ buildfire.components.reactions = (() => {
             this.showUsersReactions = typeof data.showUsersReactions === 'boolean' ? data.showUsersReactions : true; // show who reacted for each reaction
             this.allowMultipleReactions = false;
 
-            if (!ReactionsTypes.types.length) {
-                ReactionsTypes.getReactionsTypes(this.groupName, (err,res)=>{
+            if (!ReactionsTypes.groups.length) {
+                ReactionsTypes.getReactionsGroups({}, (err,res)=>{
                     if(err) return console.error(err);
-                    this.reactionsArr = res;
 
-                    if(!this.reactionsArr || !this.reactionsArr.length){
-                        return console.error('No reactions added yet')
+                    ReactionsTypes.getReactionsTypes({itemId:this.itemId, groupName:this.groupName}, (error,response)=>{
+                        if(error){
+                            return console.error(error);
+                        }
+
+                        this.reactionsArr = response;
+                        this._init();
+                    })
+                })
+            } else if(!ReactionsTypes.itemsReactionsTypes[this.itemId]){
+                ReactionsTypes.getReactionsTypes({itemId:this.itemId, groupName:this.groupName}, (error,response)=>{
+                    if(error){
+                        return console.error(error);
                     }
+
+                    this.reactionsArr = response;
                     this._init();
                 })
-            } else {
-                this.reactionsArr = ReactionsTypes.types;
-
-                if(!this.reactionsArr || !this.reactionsArr.length){
-                    return console.error('No reactions added yet')
-                }
+            }else{
+                this.reactionsArr = ReactionsTypes.itemsReactionsTypes[this.itemId];
                 this._init();
             }
         }
 
         _init() {
-            this._buildComponent();
-            State.debounce({ itemId: this.itemId, getUsersData: true, getSummariesData: true });
+            if(this.reactionsArr.length){
+                this._buildComponent();
+                State.debounce({ itemId: this.itemId, getUsersData: true, getSummariesData: true });
+            }
         }
 
         _buildComponent() {
@@ -1186,8 +1224,8 @@ buildfire.components.reactions = (() => {
                     }, 300)
                 }
 
-                if (newIcon && !oldIcon) {
-                    let reactionsCountContainer = this.container.querySelector('[bf-reactions-total-count]');
+                let reactionsCountContainer = this.container.querySelector('[bf-reactions-total-count]');
+                if (newIcon && !oldIcon && reactionsCountContainer) {
                     let reactionsCount = reactionsCountContainer.getAttribute('bf-reactions-total-count');
                     let newCount = parseInt(reactionsCount) + 1;
                     reactionsCountContainer.setAttribute('bf-reactions-total-count', newCount);
@@ -1195,7 +1233,6 @@ buildfire.components.reactions = (() => {
                 }
 
                 if (!newIcon && oldIcon) {
-                    let reactionsCountContainer = this.container.querySelector('[bf-reactions-total-count]');
                     let reactionsCount = reactionsCountContainer.getAttribute('bf-reactions-total-count');
                     let newCount = parseInt(reactionsCount) - 1;
                     newCount = newCount >= 0 ? newCount : 0
@@ -1242,17 +1279,17 @@ buildfire.components.reactions = (() => {
             let _setUsersList = (reactions, index, callBack) => {
                 let reaction = reactions[index];
 
-                let reactionObject = this.reactionType.find(reactionType => reactionType.type === reaction.data.reactions[0].type);
+                let reactionObject = this.reactionsArr.find(reactionType => reactionType.id === reaction.data.reactions[0].reactionUUID);
                 let url = reactionObject.selectedUrl;
 
                 buildfire.auth.getUserProfile({ userId: reaction.data.userId }, (err, user) => {
                     if (err) return console.error(err);
                     listItems.push({
-                        text: `<div class="reactions-users-list" style="display: flex;width: calc(100vw - 85px);justify-content: space-between;align-items: center;">
-                                    <p style="max-width: 75%; margin:0 !important;">${user.displayName ? user.displayName : user.firstName ? user.firstName : 'User'}</p>
-                                    <span style="display: flex;justify-content: center;align-items: center;" class="material-icons material-icons-sharp"><img style="width: 2rem;height: 2rem;" src="${url}" /></span>
-                                </div>`,
-                        imageUrl: user.imageUrl
+                        text:   `<div style="display: flex; gap: 1rem; align-items: center;">
+                                    <img style="border-radius:100%; width:42px; height:42px;" src="${user.imageUrl}" alt="user image" />
+                                    <p style="overflow:auto; max-width: 75%; margin:0 !important;">${user.displayName ? user.displayName : user.firstName ? user.firstName : 'User'}</p>
+                                    <span style="position: absolute;bottom: 0;left: 3px;" class="material-icons material-icons-sharp"><img style="width: 2rem;height: 2rem;" src="${url}" /></span>
+                                </div>`
                     })
                     if (index == reactions.length - 1) {
                         this._openDrawer(listItems);

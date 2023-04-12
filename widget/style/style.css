@@ -86,6 +86,7 @@ img {
 
 .reactionsContainer{
     height: 2.5rem;
+    width: 3.5rem;
 }
 
 .reactions-main-container {
@@ -181,6 +182,23 @@ img {
 
 .reactions-hidden {
     display: none !important;
+}
+
+.post-footer{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-icons{
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--bf-theme-body-text);
+}
+
+.mirror{
+    transform: scale(-1,1);
 }
 
 @-webkit-keyframes reactions-icons-animation {
