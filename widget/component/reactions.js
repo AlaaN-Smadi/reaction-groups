@@ -210,7 +210,7 @@ buildfire.components.reactions = (() => {
                             if (err) {
                                 return callback(err);
                             }
-                            return callback(null, { status: 'updated', data: res, oldData:result.data  })
+                            return callback(null, { status: 'updated', data: res, oldData: result.data })
                         })
                     }
                 } else {
@@ -323,7 +323,7 @@ buildfire.components.reactions = (() => {
 
             buildfire.appData.search(
                 {
-                    filter, page: pageIndex, pageSize,
+                    filter, page: pageIndex, pageSize, recordCount: true
                 }, this.TAG,
                 (err, result) => {
                     if (err) {
@@ -1286,9 +1286,9 @@ buildfire.components.reactions = (() => {
                 let reaction = reactions[index];
 
                 let reactionObject = this.reactionsArr.find(reactionType => reactionType.id === reaction.data.reactions[0].reactionUUID);
-                if(reactionObject){
+                if (reactionObject) {
                     let url = reactionObject.selectedUrl;
-    
+
                     buildfire.auth.getUserProfile({ userId: reaction.data.userId }, (err, user) => {
                         if (err) return console.error(err);
                         listItems.push({
@@ -1304,16 +1304,39 @@ buildfire.components.reactions = (() => {
                             callBack(reactions, index + 1, _setUsersList)
                         }
                     });
-                }else if (index == reactions.length - 1) {
+                } else if (index == reactions.length - 1) {
                     this._openDrawer(listItems);
                 }
             }
 
-            let options = { itemId: this.itemId, pageIndex: 0, pageSize: 50 };
-            Reactions.get(options, (error, result) => {
+            let options = { itemId: this.itemId, pageIndex: 0, pageSize: 50 }, totalUsersReactions = [];
+            Reactions.get(options, (error, res) => {
                 if (error) { }
-                else if (result.length) {
-                    _setUsersList(result, 0, _setUsersList);
+                else if (res.result.length) {
+                    totalUsersReactions = res.result;
+
+                    let promiseArr = [], totalRecords = res.totalRecord, index = 0;
+                    while (totalRecords > 50 && index < 4) {
+                        options.pageIndex += 1;
+                        promiseArr[index] = new Promise((resolve, reject) => {
+                            Reactions.get(options, (error, res) => {
+                                if (res.result.length) {
+                                    totalUsersReactions = [...totalUsersReactions, ...res.result];
+                                }
+                                resolve(true);
+                            })
+                        })
+                        index += 1;
+                        totalRecords -= 50;
+                    }
+
+                    if (promiseArr.length > 1) {
+                        Promise.all(promiseArr).then(() => {
+                            _setUsersList(totalUsersReactions, 0, _setUsersList);
+                        });
+                    } else {
+                        _setUsersList(totalUsersReactions, 0, _setUsersList);
+                    }
                 } else {
                     this._openDrawer([]);
                 }
