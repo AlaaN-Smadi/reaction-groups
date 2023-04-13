@@ -195,7 +195,6 @@ class groupListUI extends SortableListUI {
     }
 
     onEditBtnClicked = (item, index) => {
-        State.groupIndex = index;
         Views.navigate('reactionList', item);
     }
 

@@ -12,17 +12,25 @@ const initialData = {
     _initialGroups: {
         'General': [
             {
-                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
-                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+                "selectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/14f7d6c0-d993-11ed-925e-5b007d5e8eea.png",
+                "unSelectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/14f7afb0-d993-11ed-86f6-f3f0569303b6.png",
             },
             {
-                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
-                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+                "selectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/ddf224d0-da0c-11ed-86f6-f3f0569303b6.png",
+                "unSelectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/d6af5170-da0c-11ed-925e-5b007d5e8eea.png",
             },
             {
-                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
-                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
-            }
+                "selectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/038a2ad0-da0d-11ed-868e-d7be3e8404e8.png",
+                "unSelectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/0388f250-da0d-11ed-925e-5b007d5e8eea.png",
+            },
+            {
+                "selectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/f262d720-da0c-11ed-925e-5b007d5e8eea.png",
+                "unSelectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/f25edf80-da0c-11ed-86f6-f3f0569303b6.png",
+            },
+            {
+                "selectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/eb18d7d0-da0c-11ed-868e-d7be3e8404e8.png",
+                "unSelectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/eb15ca90-da0c-11ed-925e-5b007d5e8eea.png",
+            },
         ],
         'Like': [
             {
@@ -30,18 +38,26 @@ const initialData = {
                 unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
             }
         ],
-        'Smileys': [
+        'Smiley': [
             {
-                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
-                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+                "selectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/ddf224d0-da0c-11ed-86f6-f3f0569303b6.png",
+                "unSelectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/d6af5170-da0c-11ed-925e-5b007d5e8eea.png",
             },
             {
-                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
-                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+                "selectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/ddf977d0-da0c-11ed-86f6-f3f0569303b6.png",
+                "unSelectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/d6b740b0-da0c-11ed-86f6-f3f0569303b6.png",
             },
             {
-                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
-                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+                "selectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/ddf58030-da0c-11ed-868e-d7be3e8404e8.png",
+                "unSelectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/d6b1e980-da0c-11ed-868e-d7be3e8404e8.png",
+            },
+            {
+                "selectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/dde9c060-da0c-11ed-925e-5b007d5e8eea.png",
+                "unSelectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/d6ab0bb0-da0c-11ed-868e-d7be3e8404e8.png",
+            },
+            {
+                "selectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/ddf02900-da0c-11ed-868e-d7be3e8404e8.png",
+                "unSelectedUrl": "https://s3-us-west-2.amazonaws.com/imageserver.prod/1681345747513-09587863467627367/d6ac9250-da0c-11ed-86f6-f3f0569303b6.png",
             }
         ]
     },
@@ -74,7 +90,6 @@ const initialData = {
 
                 let groupsData = new ReactionsGroup({ groups });
                 APIHandlers.insertInitialGroups(groupsData);
-                
             }
         })
     }
@@ -257,6 +272,10 @@ const ReactionsList = {
         this._initList(options);
         if (options.name) {
             State.activeGroup = JSON.parse(JSON.stringify(options));
+
+            State.groupIndex = GroupsList.groups.findIndex(item => {
+                return item.name === options.name;
+            });
         }
 
         APIHandlers.sendToWidget(true, this.reactions);
