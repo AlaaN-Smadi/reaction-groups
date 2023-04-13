@@ -658,6 +658,7 @@ buildfire.components.reactions = (() => {
         static _timer;
         static _observerContainers = [];
         static _observerTimer;
+        static onLogin_onLogout_set = false;
 
         // options = {itemId, getUsersData, getSummariesData}
         static debounce(options) {
@@ -703,25 +704,48 @@ buildfire.components.reactions = (() => {
         static _showAllReactionCount(summaries, itemIds) {
             // print reactions count in the dom
             summaries.forEach(summery => {
-                let containers = document.querySelectorAll(`[bf-reactions-itemid="${summery.data.itemId}"]`);
-                containers.forEach(container => {
-                    let totalReactionCount = 0;
-                    if (container) {
-                        summery.data.reactions.forEach(reaction => {
-                            ReactionsTypes.validateReactionTypes({ reactionUUID: reaction.reactionUUID, itemId: summery.data.itemId }, (err, res) => {
-                                if (err) console.error(err);
-                                else totalReactionCount += reaction.count;
-                            })
+                let container = document.querySelector(`[bf-reactions-itemid="${summery.data.itemId}"]`),
+                    iconIds = [], btnWidth = 1;
+                let totalReactionCount = 0;
+                if (container) {
+                    summery.data.reactions.forEach(reaction => {
+                        ReactionsTypes.validateReactionTypes({ reactionUUID: reaction.reactionUUID, itemId: summery.data.itemId }, (err, res) => {
+                            if (err) console.error(err);
+                            else if(res && reaction.count>0){
+                                totalReactionCount += reaction.count;
+                                iconIds.push(res.id);
+                                btnWidth += 0.5;
+                            }
                         })
-                        totalReactionCount = totalReactionCount > 0 ? totalReactionCount : 0;
+                    });
 
-                        let totalCountContainer = container.querySelector(`[bf-reactions-total-count]`);
-                        if (totalCountContainer) {
-                            totalCountContainer.setAttribute('bf-reactions-total-count', totalReactionCount);
-                            totalCountContainer.innerHTML = totalReactionCount;
-                        }
+                    let secondaryImages = container.querySelectorAll('[bf-reaction-image-id]');
+                    secondaryImages=Array.from(secondaryImages).filter(icon=>{
+                        let id = icon.getAttribute('bf-reaction-image-id');
+                        return iconIds.includes(id);
+                    })
+
+                    secondaryImages.forEach((icon, idx) => {
+                        icon.classList.remove('reactions-hidden');
+                        icon.style.left = `${(idx + 1) / 2}rem`;
+                        icon.style.zIndex = `${(9 - idx)}`;
+                        idx += 1;
+                    })
+
+                    let totalCountContainer = container.querySelector(`[bf-reactions-total-count]`);
+                    let btnContainer = container.querySelector(`[bf-reactions-image-container]`);
+
+                    if (totalCountContainer) {
+                        totalCountContainer.setAttribute('bf-reactions-total-count', totalReactionCount);
+                        totalCountContainer.innerHTML = totalReactionCount;
+                        btnWidth += 0.5;
                     }
-                })
+                    if (btnContainer) {
+                        btnContainer.style.width = `${btnWidth}rem`;
+                    }
+
+                    this.correctReactionIconsPosition(summery.data.itemId);
+                }
             })
             // show all count containers
             let countContainers = document.querySelectorAll("[bf-reactions-total-count]");
@@ -739,29 +763,50 @@ buildfire.components.reactions = (() => {
                             return console.error(e);
                         }
                         if (r) {
-                            let containers = document.querySelectorAll(`[bf-reactions-itemid="${reaction.data.itemId}"]`);
-                            containers.forEach(container => {
-                                let mainButton = container.querySelector('[bf-reactions-btn]');
-                                let userReactionIcon = container ? container.querySelector(`[bf-reactions-uuid="${reaction.data.reactions[0].reactionUUID}"]`) : null;
+                            let container = document.querySelector(`[bf-reactions-itemid="${reaction.data.itemId}"]`);
+                            let mainButton = container.querySelector('[bf-reactions-btn]');
+                            let userReactionIcon = container ? container.querySelector(`[bf-reactions-uuid="${reaction.data.reactions[0].reactionUUID}"]`) : null;
 
-                                if (container && userReactionIcon) {
-                                    container.setAttribute('bf-user_react-uuid', reaction.data.reactions[0].reactionUUID);
-                                    container.setAttribute('bf-user_react-id', reaction.id);
-                                    userReactionIcon.classList.add('reacted');
-                                    userReactionIcon.style.color = userReactionIcon.getAttribute('bf-reactions-color');
+                            if (container && userReactionIcon) {
+                                container.setAttribute('bf-user_react-uuid', reaction.data.reactions[0].reactionUUID);
+                                container.setAttribute('bf-user_react-id', reaction.id);
+                                userReactionIcon.classList.add('reacted');
+                                userReactionIcon.style.color = userReactionIcon.getAttribute('bf-reactions-color');
 
-                                    let image = mainButton.querySelector('img');
-                                    image.src = userReactionIcon.getAttribute('bf-reactions-reacted-url');
-                                    image.classList.add('reactions-show-main-icon');
-                                    setTimeout(() => {
-                                        image.classList.remove('reactions-show-main-icon');
-                                    }, 300)
-                                }
-                            })
+                                this.correctReactionIconsPosition(reaction.data.itemId);
+
+                                mainButton.src = userReactionIcon.getAttribute('bf-reactions-reacted-url');
+                                mainButton.classList.add('reactions-show-main-icon');
+                                setTimeout(() => {
+                                    mainButton.classList.remove('reactions-show-main-icon');
+                                }, 300)
+                            }
                         }
                     })
                 }
             })
+        }
+
+        static correctReactionIconsPosition(itemId){
+            let container = document.querySelector(`[bf-reactions-itemid="${itemId}"]`);
+            if(container){
+                let userReactionType = container.getAttribute('bf-user_react-uuid');
+                let secondaryReactionIcons = container.querySelectorAll(`[bf-reaction-image-id]`);
+                let selectedIconRemoved = false;
+
+                secondaryReactionIcons=Array.from(secondaryReactionIcons).filter(icon=>(!icon.classList.contains('reactions-hidden')));
+                secondaryReactionIcons.forEach((icon,idx)=>{
+                    let iconReactionType = icon.getAttribute('bf-reaction-image-id');
+                    if(userReactionType == iconReactionType){
+                        icon.classList.add('reactions-hidden');
+                        selectedIconRemoved = true;
+                    }else if(selectedIconRemoved){
+                        icon.style.left=icon.style.left = `${((idx + 1) / 2)-0.5}rem`;
+                    }else if(!userReactionType){
+                        icon.style.left=icon.style.left = `${((idx + 1) / 2)}rem`;
+                    }
+                })
+            }
         }
 
         static buildObserver(selector) {
@@ -844,9 +889,25 @@ buildfire.components.reactions = (() => {
                 new ReactionComponent(newReaction);
             })
         }
+
+        static onLoginStateChanged(user) {
+            let validNodes = document.querySelectorAll('[bf-reactions-itemid]');
+            validNodes.forEach(node => {
+                let mainBtn = node.querySelector('[bf-reactions-default-src]');
+                if (mainBtn && !user) {
+                    mainBtn.src = mainBtn.getAttribute('bf-reactions-default-src');
+                }
+
+                let itemId = node.getAttribute('bf-reactions-itemid');
+                if (itemId && user) {
+                    State.debounce({ itemId, getUsersData: true });
+                }
+            })
+        }
     }
 
     class ReactionComponent {
+        // Widget side
         constructor(data = {}) {
 
             if (!data.itemId) {
@@ -909,6 +970,18 @@ buildfire.components.reactions = (() => {
                 })
                 this._buildComponent();
                 State.debounce({ itemId: this.itemId, getUsersData: true, getSummariesData: true });
+
+                if (!State.onLogin_onLogout_set) {
+                    buildfire.auth.onLogin((user) => {
+                        State.onLoginStateChanged(user)
+                    }, true);
+
+                    buildfire.auth.onLogout(() => {
+                        State.onLoginStateChanged(null)
+                    }, true);
+
+                    State.onLogin_onLogout_set = true;
+                }
             } else {
                 return console.error('No Reactions added yet');
             }
@@ -927,26 +1000,21 @@ buildfire.components.reactions = (() => {
             this.container.setAttribute('bf-user_react-uuid', ''); // reaction id from the reaction list
             this.container.setAttribute('bf-user_react-id', '');   // selected reaction id that autogenerated when the user selected
             this.container.classList.add('reactions-main-container');
+            let secondaryIcons = ``;
+
+            this.reactionsArr.forEach(icon => {
+                secondaryIcons += `<img bf-reaction-image-id="${icon.id}" class="reactions-hidden reactions-secondary-icon" src="${icon.selectedUrl}" />`
+            })
             this.container.innerHTML = `
                 <div class="reaction-main-button">
-                    <div bf-reactions-btn class="reactions-main-icon-container" ><img class="reactions-main-icon" bf-reactions-default-src="${this.reactionsArr[0].unSelectedUrl}" src="${this.reactionsArr[0].unSelectedUrl}" /></div>
+                    <div bf-reactions-image-container class="reactions-main-icon-container" >
+                        <img bf-reactions-btn class="reactions-main-icon" bf-reactions-default-src="${this.reactionsArr[0].unSelectedUrl}" src="${this.reactionsArr[0].unSelectedUrl}" />
+                        ${secondaryIcons}
+                    </div>
                     <span style="visibility:hidden;" class="reactions-total-count reactions-hidden" bf-reactions-total-count="0">0</span>
                 </div>
                 <div class="reactions-icon-container reactions-hidden" bf-reaction-icon-container>${iconsContainer}</div>
             `;
-
-            let reactionBtn = this.container.querySelector('[bf-reactions-btn]');
-            let reactionCountBtn = this.container.querySelector('[bf-reactions-total-count]');
-
-            if (this.showCount) {
-                reactionCountBtn.classList.remove('reactions-hidden');
-                // show user reactions list
-                if (this.showUsersReactions) {
-                    reactionCountBtn.addEventListener('click', () => {
-                        this._showUsersList();
-                    })
-                }
-            }
 
             // show reactions container
             this.holdTimer = null;
@@ -983,6 +1051,19 @@ buildfire.components.reactions = (() => {
 
                 this.holdPeriod = 0;
                 clearInterval(this.holdTimer);
+            }
+
+            let reactionBtn = this.container.querySelector('[bf-reactions-btn]');
+            let reactionCountBtn = this.container.querySelector('[bf-reactions-total-count]');
+
+            if (this.showCount) {
+                reactionCountBtn.classList.remove('reactions-hidden');
+                // show user reactions list
+                if (this.showUsersReactions) {
+                    reactionCountBtn.addEventListener('click', () => {
+                        this._showUsersList();
+                    })
+                }
             }
 
             reactionBtn.addEventListener('mousedown', startHoldTimer);
@@ -1222,12 +1303,12 @@ buildfire.components.reactions = (() => {
                     newIcon.classList.add('reacted');
                     this.container.setAttribute('bf-user_react-uuid', newIcon.getAttribute('bf-reactions-uuid'));
 
-                    let image = mainButton.querySelector('img');
-                    image.src = newIcon.getAttribute('bf-reactions-reacted-url');
-                    image.classList.add('reactions-show-main-icon');
+                    mainButton.src = newIcon.getAttribute('bf-reactions-reacted-url');
+                    mainButton.classList.add('reactions-show-main-icon');
                     setTimeout(() => {
-                        image.classList.remove('reactions-show-main-icon');
+                        mainButton.classList.remove('reactions-show-main-icon');
                     }, 300)
+                    State.correctReactionIconsPosition(this.itemId);
                 }
 
                 let reactionsCountContainer = this.container.querySelector('[bf-reactions-total-count]');
@@ -1245,11 +1326,10 @@ buildfire.components.reactions = (() => {
                     reactionsCountContainer.setAttribute('bf-reactions-total-count', newCount);
                     reactionsCountContainer.innerHTML = newCount;
 
-                    let image = mainButton.querySelector('img');
-                    image.src = this.reactionsArr[0].unSelectedUrl;
-                    image.classList.add('reactions-show-main-icon');
+                    mainButton.src = this.reactionsArr[0].unSelectedUrl;
+                    mainButton.classList.add('reactions-show-main-icon');
                     setTimeout(() => {
-                        image.classList.remove('reactions-show-main-icon');
+                        mainButton.classList.remove('reactions-show-main-icon');
                     }, 300)
                 }
             }
@@ -1317,7 +1397,6 @@ buildfire.components.reactions = (() => {
 
                     let promiseArr = [], totalRecords = res.totalRecord, index = 0;
                     while (totalRecords > 50 && index < 4) {
-                        options.pageIndex += 1;
                         promiseArr[index] = new Promise((resolve, reject) => {
                             Reactions.get(options, (error, res) => {
                                 if (res.result.length) {
@@ -1327,6 +1406,7 @@ buildfire.components.reactions = (() => {
                             })
                         })
                         index += 1;
+                        options.pageIndex += 1;
                         totalRecords -= 50;
                     }
 
@@ -1360,21 +1440,6 @@ buildfire.components.reactions = (() => {
         }
 
         onReaction(event) { }
-
-        static refresh() {
-            let validNodes = document.querySelectorAll('[bf-reactions-itemid]');
-            validNodes.forEach(node => {
-                let mainBtn = node.querySelector('[bf-reactions-default-src]');
-                if (mainBtn) {
-                    mainBtn.src = mainBtn.getAttribute('bf-reactions-default-src');
-                }
-
-                let itemId = node.getAttribute('bf-reactions-itemid');
-                if (itemId) {
-                    State.debounce({ itemId, getUsersData: true });
-                }
-            })
-        }
 
         static build(selector) {
             State.buildObserver(selector);

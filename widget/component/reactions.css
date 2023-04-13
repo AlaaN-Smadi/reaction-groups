@@ -12,19 +12,25 @@
     align-items: center;
 }
 
-.reactions-main-icon {
+.reactions-main-icon,
+.reactions-secondary-icon {
     width: 1.5rem;
     height: 1.5rem;
     cursor: pointer;
     padding: 0.25rem;
+    z-index: 10;
+    position: absolute;
+    left: 0;
 }
 
 .reactions-main-icon-container {
-    width: 2rem !important;
+    max-width: 4rem !important;
+    width: 4rem;
     height: 2rem !important;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 .reactions-show-main-icon{

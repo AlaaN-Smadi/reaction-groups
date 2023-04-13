@@ -236,7 +236,7 @@ class reactionListUI extends SortableListUI {
         activeState.className = "active-state";
         activeState.setAttribute('for', `${item.id}`);
 
-        activeState.innerHTML = item.isActive ? 'Active' : 'Inactive';
+        activeState.innerHTML = 'Active';
         toggleButton.classList.add('button-switch');
         toggleButton.classList.add('margin-zero');
         toggleButton.classList.add('margin-right-fifteen');
@@ -250,11 +250,6 @@ class reactionListUI extends SortableListUI {
         toggleLabel = toggleLabel.firstChild;
 
         toggleInput.onclick = (event) => {
-            if (event.target.checked) {
-                activeState.innerHTML = 'Active';
-            } else {
-                activeState.innerHTML = 'Inactive';
-            }
             this.sortableList.changeToggle(item, event.target.checked, divRow);
             this.onToggleChanged(item, event.target.checked);
         }

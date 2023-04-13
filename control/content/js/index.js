@@ -98,7 +98,7 @@ const initialData = {
 const APIHandlers = {
     savingTimer: null, sendingTimer: null,
 
-    insertInitialGroups(groupsData){
+    insertInitialGroups(groupsData) {
         ReactionsGroups.insert(groupsData, (err, res) => {
             if (err) {
                 GroupsList.updateEmptyState("empty");
@@ -141,26 +141,9 @@ const APIHandlers = {
 
             if (!res || !res.groups) {
                 GroupsList.groups = [];
-                GroupsList.updateEmptyState("empty");
-
-                let loadSampleDataOptions = {
-                    title: `Sample Data`,
-                    message: `let's load some sample reactions`,
-                    confirmButton: { text: "Load Sample Data", type: "success" },
-                }
-
-                buildfire.dialog.confirm(loadSampleDataOptions, (e, isConfirmed) => {
-                    if (e) console.error(e);
-
-                    if (isConfirmed) {
-                        GroupsList.updateEmptyState("loading");
-                        initialData.setInitialGroups();
-                    }
-                    else {
-                        GroupsList.updateEmptyState("empty");
-                        GroupsList.list.init([]);
-                    }
-                });
+                GroupsList.updateEmptyState("loading");
+                initialData.setInitialGroups();
+                
             } else if (!res.groups.length) {
                 GroupsList.groups = [];
                 GroupsList.list.init([]);
@@ -435,7 +418,7 @@ const ReactionsList = {
                             if (e) console.error(e);
                             if (isConfirmed) {
                                 GroupsList.groups[State.groupIndex] = JSON.parse(JSON.stringify(State.activeGroup));
-                                
+
                                 let groups = GroupsList.groups, reactions = [];
                                 if (groups && groups[0] && groups[0].reactions) {
                                     reactions = groups[0].reactions;
