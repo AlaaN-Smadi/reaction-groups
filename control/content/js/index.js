@@ -8,8 +8,95 @@ const State = {
     activePage: '',
 }
 
+const initialData = {
+    _initialGroups: {
+        'General': [
+            {
+                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
+                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+            },
+            {
+                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
+                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+            },
+            {
+                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
+                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+            }
+        ],
+        'Like': [
+            {
+                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
+                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+            }
+        ],
+        'Smileys': [
+            {
+                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
+                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+            },
+            {
+                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
+                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+            },
+            {
+                selectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/9dd92430-d402-11ed-9bf8-39263e093466.png',
+                unSelectedUrl: 'https://s3-us-west-2.amazonaws.com/imageserver.prod/1678747242812-005304926216515837/a55a6020-d402-11ed-b497-f5a0916fe7bb.png',
+            }
+        ]
+    },
+
+    setInitialGroups() {
+        buildfire.auth.getCurrentUser((err, user) => {
+            if (err || !user) {
+                GroupsList.updateEmptyState("empty");
+                return console.error(err || 'No User found');
+            }
+            if (user && user.userId) {
+                let groups = [];
+
+                for (const groupName in this._initialGroups) {
+                    let groupData = new Group({
+                        name: groupName,
+                        reactions: this._initialGroups[groupName].map(reaction => {
+                            return new ReactionsTypes({
+                                id: uuidv4(),
+                                selectedUrl: reaction.selectedUrl,
+                                unSelectedUrl: reaction.unSelectedUrl,
+                                isActive: true
+                            })
+                        }),
+                        createdBy: user.userId,
+                        lastUpdatedBy: user.userId
+                    });
+                    groups.push(groupData);
+                }
+
+                let groupsData = new ReactionsGroup({ groups });
+                APIHandlers.insertInitialGroups(groupsData);
+                
+            }
+        })
+    }
+}
+
 const APIHandlers = {
     savingTimer: null, sendingTimer: null,
+
+    insertInitialGroups(groupsData){
+        ReactionsGroups.insert(groupsData, (err, res) => {
+            if (err) {
+                GroupsList.updateEmptyState("empty");
+                return console.error(err);
+            }
+
+            GroupsList.groups = groupsData.groups;
+            GroupsList.list.init(groupsData.groups);
+            GroupsList.updateEmptyState("list printed");
+
+            this.sendToWidget(false, GroupsList.groups[0].reactions);
+        })
+    },
 
     updateGroups() {
         clearTimeout(this.savingTimer);
@@ -39,15 +126,26 @@ const APIHandlers = {
 
             if (!res || !res.groups) {
                 GroupsList.groups = [];
-                GroupsList.list.init([]);
                 GroupsList.updateEmptyState("empty");
 
-                let reactionGroups = new ReactionsGroup({ groups: [] });
+                let loadSampleDataOptions = {
+                    title: `Sample Data`,
+                    message: `let's load some sample reactions`,
+                    confirmButton: { text: "Load Sample Data", type: "success" },
+                }
 
-                ReactionsGroups.insert(reactionGroups, (err, res) => {
-                    if (err) return console.error(err);
+                buildfire.dialog.confirm(loadSampleDataOptions, (e, isConfirmed) => {
+                    if (e) console.error(e);
 
-                })
+                    if (isConfirmed) {
+                        GroupsList.updateEmptyState("loading");
+                        initialData.setInitialGroups();
+                    }
+                    else {
+                        GroupsList.updateEmptyState("empty");
+                        GroupsList.list.init([]);
+                    }
+                });
             } else if (!res.groups.length) {
                 GroupsList.groups = [];
                 GroupsList.list.init([]);
@@ -71,7 +169,7 @@ const APIHandlers = {
             let groups = GroupsList.groups;
             if (!groups.length) {
                 groups = [{
-                    name: ReactionsList.uiElements.inputGroupName?ReactionsList.uiElements.inputGroupName.value:'',
+                    name: ReactionsList.uiElements.inputGroupName ? ReactionsList.uiElements.inputGroupName.value : '',
                     reactions: reactions
                 }]
             }
@@ -157,7 +255,7 @@ const ReactionsList = {
         this._addListeners();
 
         this._initList(options);
-        if(options.name){
+        if (options.name) {
             State.activeGroup = JSON.parse(JSON.stringify(options));
         }
 
@@ -233,7 +331,9 @@ const ReactionsList = {
                 }
 
                 buildfire.auth.getCurrentUser((err, user) => {
-                    if (err) return console.error(err);
+                    if (err || !user) {
+                        return console.error(err || 'No user found');
+                    }
 
                     if (State.addNewGroup) {
                         let newGroup = new Group({
@@ -271,7 +371,7 @@ const ReactionsList = {
         if (!this.reactions.length) return this.updateEmptyState("empty");
         else this.updateEmptyState("list printed");
 
-        if(this.reactions.length===5) this.uiElements.addBtn.setAttribute('disabled', 'disabled');
+        if (this.reactions.length === 5) this.uiElements.addBtn.setAttribute('disabled', 'disabled');
     },
 
     _initUIElements() {
