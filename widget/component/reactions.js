@@ -705,13 +705,13 @@ buildfire.components.reactions = (() => {
             // print reactions count in the dom
             summaries.forEach(summery => {
                 let container = document.querySelector(`[bf-reactions-itemid="${summery.data.itemId}"]`),
-                    iconIds = [], btnWidth = 1;
+                    iconIds = [], btnWidth = 1.5;
                 let totalReactionCount = 0;
                 if (container) {
                     summery.data.reactions.forEach(reaction => {
                         ReactionsTypes.validateReactionTypes({ reactionUUID: reaction.reactionUUID, itemId: summery.data.itemId }, (err, res) => {
                             if (err) console.error(err);
-                            else if(res && reaction.count>0){
+                            else {
                                 totalReactionCount += reaction.count;
                                 iconIds.push(res.id);
                                 btnWidth += 0.5;
@@ -738,7 +738,6 @@ buildfire.components.reactions = (() => {
                     if (totalCountContainer) {
                         totalCountContainer.setAttribute('bf-reactions-total-count', totalReactionCount);
                         totalCountContainer.innerHTML = totalReactionCount;
-                        btnWidth += 0.5;
                     }
                     if (btnContainer) {
                         btnContainer.style.width = `${btnWidth}rem`;
@@ -787,25 +786,34 @@ buildfire.components.reactions = (() => {
             })
         }
 
-        static correctReactionIconsPosition(itemId){
+        static correctReactionIconsPosition(itemId, oldReactionType){
             let container = document.querySelector(`[bf-reactions-itemid="${itemId}"]`);
             if(container){
                 let userReactionType = container.getAttribute('bf-user_react-uuid');
+                let btnWidth = 1.5;
+
                 let secondaryReactionIcons = container.querySelectorAll(`[bf-reaction-image-id]`);
                 let selectedIconRemoved = false;
 
-                secondaryReactionIcons=Array.from(secondaryReactionIcons).filter(icon=>(!icon.classList.contains('reactions-hidden')));
+                secondaryReactionIcons=Array.from(secondaryReactionIcons).filter(icon=>((!icon.classList.contains('reactions-hidden')||(oldReactionType==icon.getAttribute(`bf-reaction-image-id`)))));
                 secondaryReactionIcons.forEach((icon,idx)=>{
+                    icon.classList.remove('reactions-hidden');
                     let iconReactionType = icon.getAttribute('bf-reaction-image-id');
                     if(userReactionType == iconReactionType){
                         icon.classList.add('reactions-hidden');
                         selectedIconRemoved = true;
                     }else if(selectedIconRemoved){
                         icon.style.left=icon.style.left = `${((idx + 1) / 2)-0.5}rem`;
+                        btnWidth += 0.5;
                     }else if(!userReactionType){
                         icon.style.left=icon.style.left = `${((idx + 1) / 2)}rem`;
+                        btnWidth += 0.5;
                     }
                 })
+                let btnContainer = container.querySelector(`[bf-reactions-image-container]`);
+                if(btnContainer){
+                    btnContainer.style.width = `${btnWidth}rem`
+                }
             }
         }
 
@@ -1291,10 +1299,11 @@ buildfire.components.reactions = (() => {
             this._hideReactionIcons();
 
             if (!fromQueue) {
-                let mainButton = this.container.querySelector('[bf-reactions-btn]');
+                let mainButton = this.container.querySelector('[bf-reactions-btn]'), oldReactionUUID=null;
 
                 if (oldIcon) {
                     oldIcon.classList.remove('reacted');
+                    oldReactionUUID = this.container.getAttribute('bf-user_react-uuid');
                     this.container.setAttribute('bf-user_react-uuid', '');
                     this.container.setAttribute('bf-user_react-id', '');
                 }
@@ -1308,7 +1317,6 @@ buildfire.components.reactions = (() => {
                     setTimeout(() => {
                         mainButton.classList.remove('reactions-show-main-icon');
                     }, 300)
-                    State.correctReactionIconsPosition(this.itemId);
                 }
 
                 let reactionsCountContainer = this.container.querySelector('[bf-reactions-total-count]');
@@ -1332,6 +1340,7 @@ buildfire.components.reactions = (() => {
                         mainButton.classList.remove('reactions-show-main-icon');
                     }, 300)
                 }
+                State.correctReactionIconsPosition(this.itemId, oldReactionUUID);
             }
         }
 
