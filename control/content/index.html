@@ -26,7 +26,11 @@
   <script src="../../widget/data/ReactionTypes.js"></script>
   <script src="../../widget/dataAccess/ReactionsGroups.js"></script>
   <!-- endbuild -->
-  
+
+  <!-- build:bundleComponentJSFiles  -->
+  <script src="../../widget/component/reactions.js"></script>
+  <!-- endbuild -->
+
   <!-- build:bundleJSFiles  -->
   <script src="./js/uuid.min.js"></script>
   <script src="./sortableList/sortableList.js"></script>
@@ -38,12 +42,18 @@
 </head>
 
 <body>
+  <button class="btn btn-primary" id="openDialog">open dialog</button>
   <div id="mainContainer"></div>
 </body>
 
 <script>
   window.onload = () => {
     Views.init();
+
+    let openDialog = document.getElementById('openDialog');
+    openDialog.addEventListener('click', () => {
+      buildfire.components.reactions.openReactionGroupsDialog()
+    })
   }
 </script>
 

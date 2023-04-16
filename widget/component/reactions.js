@@ -291,7 +291,7 @@ buildfire.components.reactions = (() => {
                 }
             })
         }
-        // options: { itemId, pageIndex, pageSize }
+        // options: { itemId, groupName, pageIndex, pageSize }
         static get(options, callback) { // fetch who reacted for specific item
             if (!callback || typeof callback !== 'function') {
                 return console.error("callback must be a function!");
@@ -300,7 +300,7 @@ buildfire.components.reactions = (() => {
             if (!options) {
                 return callback("missing get options!");
             }
-            let { itemId, pageIndex, pageSize } = options;
+            let { itemId, groupName, pageIndex, pageSize } = options;
 
             if (!itemId) {
                 return callback("Invalid get options!");
@@ -315,27 +315,32 @@ buildfire.components.reactions = (() => {
             }
 
             // get all available types for this item
-            let inArr = ReactionsTypes.itemsReactionsTypes[itemId].map(reaction => {
-                return `reactionUUID-${itemId}-${reaction.id}`
-            })
-
-            let filter = { "_buildfire.index.array1.string1": { $in: inArr } }
-
-            buildfire.appData.search(
-                {
-                    filter, page: pageIndex, pageSize, recordCount: true
-                }, this.TAG,
-                (err, result) => {
-                    if (err) {
-                        return callback(err);
-                    }
-
-                    if (result) {
-                        return callback(null, result);
-                    }
-                    return callback(null, null);
+            ReactionsTypes.getReactionsTypes({groupName, itemId}, (err,reactions)=>{
+                if(err){
+                    return callback(err)
                 }
-            );
+                let inArr = reactions.map(reaction => {
+                    return `reactionUUID-${itemId}-${reaction.id}`
+                })
+    
+                let filter = { "_buildfire.index.array1.string1": { $in: inArr } }
+    
+                buildfire.appData.search(
+                    {
+                        filter, page: pageIndex, pageSize, recordCount: true
+                    }, this.TAG,
+                    (err, result) => {
+                        if (err) {
+                            return callback(err);
+                        }
+    
+                        if (result) {
+                            return callback(null, result);
+                        }
+                        return callback(null, null);
+                    }
+                );
+            });
         }
 
         static getByUserId(userId, itemIds, callback) {
@@ -576,7 +581,7 @@ buildfire.components.reactions = (() => {
     }
 
     class ReactionsTypes {
-        static itemsReactionsTypes = {};
+        static itemsReactionsGroupName = {};
         static groups = [];
 
         static get TAG() {
@@ -628,13 +633,15 @@ buildfire.components.reactions = (() => {
             }
 
             const allActiveReactions = group.reactions.filter(reaction => (reaction.isActive == true && reaction.selectedUrl && reaction.unSelectedUrl));
-            this.itemsReactionsTypes[itemId] = allActiveReactions;
+            if(!this.itemsReactionsGroupName[itemId]){
+                this.itemsReactionsGroupName[itemId] = groupName || group.name;
+            }
 
             return callback(null, allActiveReactions);
         }
 
         static validateReactionTypes(options, callback) {
-            const { reactionUUID, itemId } = options;
+            const { reactionUUID, itemId, groupName } = options;
 
             if (!reactionUUID) {
                 return callback('Missing Reaction ID');
@@ -643,12 +650,167 @@ buildfire.components.reactions = (() => {
                 return callback('Missing itemId');
             }
 
-            let validState = this.itemsReactionsTypes[itemId].find(reaction => reaction.id == reactionUUID);
+            this.getReactionsTypes({itemId, groupName}, (err,res)=>{
+                if(err){
+                    return callback(err);
+                }
+                let validState = res.find(reaction => reaction.id == reactionUUID);
+    
+                if (validState) {
+                    return callback(null, validState)
+                }
+                return callback('Invalid Reaction ID');
+            });
+        }
+    }
 
-            if (validState) {
-                return callback(null, validState)
+    class DialogManager {
+        static dialogContainer = document.createElement('div');
+
+        static init(options, callback){
+            if (!callback || typeof callback !== 'function') {
+                callback = (groupName) => { console.log('selected group changed to ' + groupName) }
+            } 
+
+            this.show();
+            this._addListeners(callback);
+
+            if (ReactionsTypes.groups.length) {
+                this._printList(ReactionsTypes.groups);
+            } else {
+                ReactionsTypes.getReactionsGroups({}, (err, res) => {
+                    if (err) return console.error(err);
+
+                    if (res && res.length) {
+                        this._printList(res);
+                    } else {
+                        this.updateContentState('empty')
+                    }
+                })
             }
-            return callback('Invalid Reaction ID');
+        }
+
+        static show() {
+            this.dialogContainer.innerHTML = `
+            <div modal-render="true" tabindex="-1" role="dialog" class="modal fade ng-isolate-scope in" uib-modal-animation-class="fade" modal-in-class="in" uib-modal-window="modal-window" window-class="" size="lg" index="0" animate="animate" modal-animation="true" style="z-index: 1050; display: block;background:#00000061;">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content" uib-modal-transclude="" style="height:70vh;">
+                        <form class="submit-modal">
+                            <div class="tag-search-dialog ng-scope" style="height:70vh;">
+                                <div class="header clearfix border-bottom-grey">
+                                    <h4 class="margin-zero" style="color:#5f5f5f;">Reactions</h4>
+                                    <span class="icon icon-cross2 close-modal" ></span>
+                                </div>
+                                <div class="padded clearfix" style="height: calc(100% - 7.25rem);overflow: hidden;overflow-y: scroll;">
+                                    <div class="well no-plugins text-center" id="reactions-dialog-empty-container">
+                                        <h4>Loading...</h4>
+                                    </div>
+                                    <div class="" id="reactions-dialog-list-container">
+                                    </div>
+                                </div>
+                                <div class="bottom border-top-grey clearfix">
+                                    <button class="btn btn-success pull-right margin-left-fifteen save-modal" type="submit" disabled="disabled">
+                                        Select
+                                    </button>    
+                                    <button class="btn btn-default pull-right cancel-modal">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>`;
+            document.body.appendChild(this.dialogContainer);
+        }
+
+        static hide() {
+            this.dialogContainer.remove();
+        }
+
+        static updateContentState(state) {
+            let emptyContainer = this.dialogContainer.querySelector('#reactions-dialog-empty-container');
+            let listContainer = this.dialogContainer.querySelector('#reactions-dialog-list-container');
+
+            switch (state) {
+                case 'empty':
+                    emptyContainer.innerHTML = "<h4>You haven't added any reactions yet</h4>";
+                    emptyContainer.classList.remove('hidden');
+                    listContainer.classList.add('hidden');
+                    break;
+                case 'loading':
+                    emptyContainer.innerHTML = "<h4>Loading...</h4>";
+                    emptyContainer.classList.remove('hidden');
+                    listContainer.classList.add('hidden');
+                    break;
+                default:
+                    emptyContainer.classList.add('hidden');
+                    listContainer.classList.remove('hidden');
+                    break;
+            }
+        }
+
+        static _printList(groups) {
+            let listContainer = this.dialogContainer.querySelector('#reactions-dialog-list-container');
+
+            let list = '';
+            groups.forEach(group => {
+                let reactions = '';
+                group.reactions.forEach(reaction=>{
+                    let src = buildfire.imageLib.cropImage(reaction.selectedUrl, { size: "half_width", aspect: "1:1" })
+                    reactions += `<img style="width:24px; height:24px;" class="margin-right-five" src="${src}" />`;
+                })
+
+                let li=`<tr style="border: 0.5px solid var(--c-gray3);">
+                            <td style="width:0%;" class="padding-bottom-fifteen padding-top-fifteen padding-left-fifteen padding-right-fifteen">
+                                <input name="selected-reaction-group" type="radio" value="${group.name}" id="${group.name}" style="width:20px;height:20px;" />
+                            </td>
+                            <td class="col-md-3 padding-bottom-fifteen padding-top-fifteen padding-left-zero padding-right-fifteen" >
+                                <label class="margin-zero cursor-pointer" for="${group.name}" style="width:100%">${group.name}</label>
+                            </td>
+                            <td class="col-md-2 padding-bottom-fifteen padding-top-fifteen padding-left-fifteen padding-right-fifteen" >
+                                <label class="margin-zero cursor-pointer" for="${group.name}" style="width:100%">${reactions}</label>
+                            </td>
+                        </tr>`;
+
+                list+=li;
+            })
+
+            listContainer.innerHTML = `<p style="font-weight: 700;color: var(--c-info);margin-left: 50px;">Group Name</p><table style="border: 0.5px solid var(--c-gray3);"><tbody>${list}</tbody></table>`;
+            let inputs = listContainer.querySelectorAll('input');
+            Array.from(inputs).forEach(input=>{
+                input.addEventListener('change', ()=>{
+                    let submitBtn = this.dialogContainer.querySelector('.save-modal');
+                    submitBtn.removeAttribute('disabled')
+                })
+            })
+            this.updateContentState('list-printed')
+        }
+
+        static _addListeners(callback) {
+            let closeBtn = this.dialogContainer.querySelector('.close-modal');
+            let cancelBtn = this.dialogContainer.querySelector('.cancel-modal');
+            let submitBtn = this.dialogContainer.querySelector('.submit-modal');
+
+            closeBtn.addEventListener('click', () => this.hide());
+            cancelBtn.addEventListener('click', () => this.hide());
+            submitBtn.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                let elements = e.target['selected-reaction-group'];
+                elements = Array.from(elements);
+
+                let selectedRadio = elements.find(el=>el.checked);
+                let groupName='';
+                if(selectedRadio){
+                    groupName = selectedRadio.value;
+                }else{
+                    groupName = '';
+                }
+
+                callback({groupName});
+                this.hide()
+            });
         }
     }
 
@@ -705,13 +867,13 @@ buildfire.components.reactions = (() => {
             // print reactions count in the dom
             summaries.forEach(summery => {
                 let container = document.querySelector(`[bf-reactions-itemid="${summery.data.itemId}"]`),
-                    iconIds = [], btnWidth = 1.5;
+                    iconIds = [], btnWidth = 1.5, groupName=container.getAttribute('bf-group-name');
                 let totalReactionCount = 0;
                 if (container) {
                     summery.data.reactions.forEach(reaction => {
-                        ReactionsTypes.validateReactionTypes({ reactionUUID: reaction.reactionUUID, itemId: summery.data.itemId }, (err, res) => {
+                        ReactionsTypes.validateReactionTypes({ reactionUUID: reaction.reactionUUID, itemId: summery.data.itemId, groupName:groupName?JSON.parse(groupName):'' }, (err, res) => {
                             if (err) console.error(err);
-                            else {
+                            else if(reaction.count>0){
                                 totalReactionCount += reaction.count;
                                 iconIds.push(res.id);
                                 btnWidth += 0.5;
@@ -720,7 +882,7 @@ buildfire.components.reactions = (() => {
                     });
 
                     let secondaryImages = container.querySelectorAll('[bf-reaction-image-id]');
-                    secondaryImages=Array.from(secondaryImages).filter(icon=>{
+                    secondaryImages = Array.from(secondaryImages).filter(icon => {
                         let id = icon.getAttribute('bf-reaction-image-id');
                         return iconIds.includes(id);
                     })
@@ -786,32 +948,31 @@ buildfire.components.reactions = (() => {
             })
         }
 
-        static correctReactionIconsPosition(itemId, oldReactionType){
+        static correctReactionIconsPosition(itemId, oldReactionType) {
             let container = document.querySelector(`[bf-reactions-itemid="${itemId}"]`);
-            if(container){
+            if (container) {
                 let userReactionType = container.getAttribute('bf-user_react-uuid');
                 let btnWidth = 1.5;
 
                 let secondaryReactionIcons = container.querySelectorAll(`[bf-reaction-image-id]`);
                 let selectedIconRemoved = false;
 
-                secondaryReactionIcons=Array.from(secondaryReactionIcons).filter(icon=>((!icon.classList.contains('reactions-hidden')||(oldReactionType==icon.getAttribute(`bf-reaction-image-id`)))));
-                secondaryReactionIcons.forEach((icon,idx)=>{
-                    icon.classList.remove('reactions-hidden');
+                secondaryReactionIcons = Array.from(secondaryReactionIcons).filter(icon => ((!icon.classList.contains('reactions-hidden') || (oldReactionType == icon.getAttribute(`bf-reaction-image-id`)))));
+                secondaryReactionIcons.forEach((icon, idx) => {
                     let iconReactionType = icon.getAttribute('bf-reaction-image-id');
-                    if(userReactionType == iconReactionType){
+                    if (userReactionType == iconReactionType) {
                         icon.classList.add('reactions-hidden');
                         selectedIconRemoved = true;
-                    }else if(selectedIconRemoved){
-                        icon.style.left=icon.style.left = `${((idx + 1) / 2)-0.5}rem`;
+                    } else if (selectedIconRemoved) {
+                        icon.style.left = icon.style.left = `${((idx + 1) / 2) - 0.5}rem`;
                         btnWidth += 0.5;
-                    }else if(!userReactionType){
-                        icon.style.left=icon.style.left = `${((idx + 1) / 2)}rem`;
+                    } else if (!userReactionType) {
+                        icon.style.left = icon.style.left = `${((idx + 1) / 2)}rem`;
                         btnWidth += 0.5;
                     }
                 })
                 let btnContainer = container.querySelector(`[bf-reactions-image-container]`);
-                if(btnContainer){
+                if (btnContainer) {
                     btnContainer.style.width = `${btnWidth}rem`
                 }
             }
@@ -952,7 +1113,7 @@ buildfire.components.reactions = (() => {
                         this._init();
                     })
                 })
-            } else if (!ReactionsTypes.itemsReactionsTypes[this.itemId] || !ReactionsTypes.itemsReactionsTypes[this.itemId].length) {
+            } else {
                 ReactionsTypes.getReactionsTypes({ itemId: this.itemId, groupName: this.groupName }, (error, response) => {
                     if (error) {
                         return console.error(error);
@@ -961,9 +1122,6 @@ buildfire.components.reactions = (() => {
                     this.reactionsArr = response;
                     this._init();
                 })
-            } else {
-                this.reactionsArr = ReactionsTypes.itemsReactionsTypes[this.itemId];
-                this._init();
             }
         }
 
@@ -1299,7 +1457,7 @@ buildfire.components.reactions = (() => {
             this._hideReactionIcons();
 
             if (!fromQueue) {
-                let mainButton = this.container.querySelector('[bf-reactions-btn]'), oldReactionUUID=null;
+                let mainButton = this.container.querySelector('[bf-reactions-btn]'), oldReactionUUID = null;
 
                 if (oldIcon) {
                     oldIcon.classList.remove('reacted');
@@ -1398,7 +1556,7 @@ buildfire.components.reactions = (() => {
                 }
             }
 
-            let options = { itemId: this.itemId, pageIndex: 0, pageSize: 50 }, totalUsersReactions = [];
+            let options = { itemId: this.itemId, groupName:this.groupName, pageIndex: 0, pageSize: 50 }, totalUsersReactions = [];
             Reactions.get(options, (error, res) => {
                 if (error) { }
                 else if (res.result.length) {
@@ -1452,6 +1610,11 @@ buildfire.components.reactions = (() => {
 
         static build(selector) {
             State.buildObserver(selector);
+        }
+
+        // CP Side
+        static openReactionGroupsDialog() {
+            DialogManager.init({}, (groupName) => { console.log(groupName) })
         }
     }
 

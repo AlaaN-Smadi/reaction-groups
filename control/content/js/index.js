@@ -109,7 +109,7 @@ const APIHandlers = {
             GroupsList.list.init(groupsData.groups);
             GroupsList.updateEmptyState("list printed");
 
-            this.sendToWidget(false, GroupsList.groups[0].reactions);
+            this.sendToWidget(false);
         })
     },
 
@@ -126,11 +126,7 @@ const APIHandlers = {
                 if (State.activePage !== 'groupList') {
                     Views.navigate('groupList');
                 }
-                let groups = GroupsList.groups, reactions = [];
-                if (groups && groups[0] && groups[0].reactions) {
-                    reactions = groups[0].reactions;
-                }
-                this.sendToWidget(false, reactions);
+                this.sendToWidget(false);
             })
         }, 300)
     },
@@ -143,7 +139,7 @@ const APIHandlers = {
                 GroupsList.groups = [];
                 GroupsList.updateEmptyState("loading");
                 initialData.setInitialGroups();
-                
+
             } else if (!res.groups.length) {
                 GroupsList.groups = [];
                 GroupsList.list.init([]);
@@ -159,20 +155,29 @@ const APIHandlers = {
 
     /**
      * @param {boolean} openReactionList 
-     * @param {Array} reactions 
+     * @param {string} groupName 
      */
-    sendToWidget(openReactionList, reactions) {
+    sendToWidget(openReactionList, groupName) {
         clearTimeout(this.sendingTimer);
         this.sendingTimer = setTimeout(() => {
             let groups = GroupsList.groups;
             if (!groups.length) {
                 groups = [{
                     name: ReactionsList.uiElements.inputGroupName ? ReactionsList.uiElements.inputGroupName.value : '',
-                    reactions: reactions
+                    reactions: []
+                }]
+            } else if (State.activePage !== 'groupList' && Object.keys(State.activeGroup).length) {
+                GroupsList.groups[State.groupIndex].reactions = ReactionsList.list.sortableList.items
+            } else if(State.activePage !== 'groupList'){
+                groups = [...groups,
+                {
+                    name: groupName,
+                    reactions: ReactionsList.list.sortableList.items
                 }]
             }
+            groupName = groupName ? JSON.stringify(groupName) : JSON.stringify(groups[0].name);
             buildfire.messaging.sendMessageToWidget({
-                openReactionList, reactions, groups
+                openReactionList, groups, groupName
             });
         }, 300);
     }
@@ -211,11 +216,11 @@ const GroupsList = {
             if (this.groups.length) {
                 this.updateEmptyState("list printed");
                 this.list.init(this.groups);
-                APIHandlers.sendToWidget(false, this.groups[0].reactions);
+                APIHandlers.sendToWidget(false);
             } else {
                 this.list.init([]);
                 this.updateEmptyState("empty");
-                APIHandlers.sendToWidget(false, []);
+                APIHandlers.sendToWidget(false);
             }
         }
     },
@@ -259,9 +264,11 @@ const ReactionsList = {
             State.groupIndex = GroupsList.groups.findIndex(item => {
                 return item.name === options.name;
             });
+        } else {
+            State.activeGroup = {}
         }
 
-        APIHandlers.sendToWidget(true, this.reactions);
+        APIHandlers.sendToWidget(true, options.name ? options.name : '');
     },
 
     _addListeners() {
@@ -279,13 +286,11 @@ const ReactionsList = {
                     if (isConfirmed) {
                         if (e) console.error(e);
                         if (isConfirmed) {
-                            GroupsList.groups[State.groupIndex] = JSON.parse(JSON.stringify(State.activeGroup));
-
-                            let groups = GroupsList.groups, reactions = [];
-                            if (groups && groups[0] && groups[0].reactions) {
-                                reactions = groups[0].reactions;
+                            if(Object.keys(State.activeGroup).length){
+                                GroupsList.groups[State.groupIndex] = JSON.parse(JSON.stringify(State.activeGroup));
                             }
-                            APIHandlers.sendToWidget(false, reactions);
+
+                            APIHandlers.sendToWidget(false);
 
                             return Views.navigate('groupList');
                         }
@@ -399,11 +404,7 @@ const ReactionsList = {
 
                 listItem.onclick = () => {
                     if (!State.warn) {
-                        let groups = GroupsList.groups, reactions = [];
-                        if (groups && groups[0] && groups[0].reactions) {
-                            reactions = groups[0].reactions;
-                        }
-                        APIHandlers.sendToWidget(false, reactions);
+                        APIHandlers.sendToWidget(false);
 
                         return Views.navigate('groupList');
                     }
@@ -417,13 +418,11 @@ const ReactionsList = {
                         (e, isConfirmed) => {
                             if (e) console.error(e);
                             if (isConfirmed) {
-                                GroupsList.groups[State.groupIndex] = JSON.parse(JSON.stringify(State.activeGroup));
-
-                                let groups = GroupsList.groups, reactions = [];
-                                if (groups && groups[0] && groups[0].reactions) {
-                                    reactions = groups[0].reactions;
+                                if(Object.keys(State.activeGroup).length){
+                                    GroupsList.groups[State.groupIndex] = JSON.parse(JSON.stringify(State.activeGroup));
                                 }
-                                APIHandlers.sendToWidget(false, reactions);
+
+                                APIHandlers.sendToWidget(false);
 
                                 Views.navigate('groupList');
                             }
@@ -455,7 +454,7 @@ const ReactionsList = {
         if (this.reactions.length === 5) this.uiElements.addBtn.setAttribute('disabled', 'disabled');
         else this.uiElements.addBtn.removeAttribute('disabled');
 
-        APIHandlers.sendToWidget(true, this.reactions);
+        APIHandlers.sendToWidget(true, validGroupName);
     },
 
     updateEmptyState(state) {

@@ -87,6 +87,7 @@ cssTasks.forEach(function(task){
 const jsTasks=[
     {name:"widgetJS",src:["widget/component/*.js","widget/js/*.js"],dest:"/widget"}
 	,{name:"dataJS",src:["widget/data/*.js", "widget/dataAccess/*.js"],dest:"/widget/js/data"}
+	,{name:"componentJS",src:["widget/component/*.js"],dest:"/widget/js/component"}
 	,{name:"controlContentJS",src:["control/content/js/*.js", "control/content/sortableList/*.js"],dest:"/control/content"}
 	,{name:"testsJS",src:"control/tests/*.js",dest:"/control/tests"}
 ];
@@ -122,6 +123,7 @@ gulp.task('controlHTML', function(){
     return gulp.src(['control/**/*.html'],{base: '.'})
         .pipe(htmlReplace({
             bundleJSFiles:"scripts-min.js?v=" + version
+            ,bundleComponentJSFiles:"../../widget/js/component/scripts-min.js?v=" + version
             ,bundleCSSFiles:"styles.min.css?v=" + version
 			//data, data access, tests
 			,bundleDataJSFiles:"../../widget/js/data/scripts-min.js?v=" + version
@@ -135,6 +137,7 @@ gulp.task('widgetHTML', function(){
 		.pipe(htmlReplace({
 			bundleCSSFiles:"style/styles.min.css?v=" + version
 			//data, data access and tests
+			,bundleComponentJSFiles:"js/component/scripts-min.js?v=" + version
 			,bundleDataJSFiles:"js/data/scripts-min.js?v=" + version
 			,bundleJSFiles:"scripts-min.js?v=" + version
 		}))
