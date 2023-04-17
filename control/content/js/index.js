@@ -164,11 +164,11 @@ const APIHandlers = {
             if (!groups.length) {
                 groups = [{
                     name: ReactionsList.uiElements.inputGroupName ? ReactionsList.uiElements.inputGroupName.value : '',
-                    reactions: []
+                    reactions: ReactionsList.list ? ReactionsList.list.sortableList.items : []
                 }]
             } else if (State.activePage !== 'groupList' && Object.keys(State.activeGroup).length) {
                 GroupsList.groups[State.groupIndex].reactions = ReactionsList.list.sortableList.items
-            } else if(State.activePage !== 'groupList'){
+            } else if (State.activePage !== 'groupList') {
                 groups = [...groups,
                 {
                     name: groupName,
@@ -286,7 +286,7 @@ const ReactionsList = {
                     if (isConfirmed) {
                         if (e) console.error(e);
                         if (isConfirmed) {
-                            if(Object.keys(State.activeGroup).length){
+                            if (Object.keys(State.activeGroup).length) {
                                 GroupsList.groups[State.groupIndex] = JSON.parse(JSON.stringify(State.activeGroup));
                             }
 
@@ -418,7 +418,7 @@ const ReactionsList = {
                         (e, isConfirmed) => {
                             if (e) console.error(e);
                             if (isConfirmed) {
-                                if(Object.keys(State.activeGroup).length){
+                                if (Object.keys(State.activeGroup).length) {
                                     GroupsList.groups[State.groupIndex] = JSON.parse(JSON.stringify(State.activeGroup));
                                 }
 

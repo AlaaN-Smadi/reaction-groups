@@ -588,6 +588,7 @@ buildfire.components.reactions = (() => {
             return "$$reactionsGroups";
         }
 
+        // options = saved to futuer use
         static getReactionsGroups(options, callback) {
             if (!callback || typeof callback !== 'function') {
                 return console.error("callback must be a function!");
@@ -597,7 +598,8 @@ buildfire.components.reactions = (() => {
                 if (err) return callback(err)
 
                 if (!result.data || !result.data.groups || !result.data.groups.length) {
-                    return callback('No reaction groups added yet', null)
+                    console.error('No reaction groups added yet');
+                    return callback(null, []);
                 }
 
                 this.groups = result.data.groups;
@@ -605,6 +607,7 @@ buildfire.components.reactions = (() => {
             });
         }
 
+        // options ={groupName, itemId}
         static getReactionsTypes(options, callback) {
             const { groupName, itemId } = options;
 
@@ -640,6 +643,7 @@ buildfire.components.reactions = (() => {
             return callback(null, allActiveReactions);
         }
 
+        // options ={reactionUUID, groupName, itemId}
         static validateReactionTypes(options, callback) {
             const { reactionUUID, itemId, groupName } = options;
 
@@ -1106,15 +1110,16 @@ buildfire.components.reactions = (() => {
             if (!ReactionsTypes.groups.length) {
                 ReactionsTypes.getReactionsGroups({}, (err, res) => {
                     if (err) return console.error(err);
-
-                    ReactionsTypes.getReactionsTypes({ itemId: this.itemId, groupName: this.groupName }, (error, response) => {
-                        if (error) {
-                            return console.error(error);
-                        }
-
-                        this.reactionsArr = response;
-                        this._init();
-                    })
+                    if(res&&res.length){
+                        ReactionsTypes.getReactionsTypes({ itemId: this.itemId, groupName: this.groupName }, (error, response) => {
+                            if (error) {
+                                return console.error(error);
+                            }
+    
+                            this.reactionsArr = response;
+                            this._init();
+                        })
+                    }
                 })
             } else {
                 ReactionsTypes.getReactionsTypes({ itemId: this.itemId, groupName: this.groupName }, (error, response) => {
