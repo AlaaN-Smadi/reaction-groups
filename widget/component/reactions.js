@@ -804,21 +804,22 @@ buildfire.components.reactions = (() => {
                 e.preventDefault();
 
                 let elements = e.target['selected-reaction-group'];
-                if(elements.length){
+                if (elements.length) {
                     elements = Array.from(elements);
-                }else{
+                } else {
                     elements = [elements];
                 }
 
                 let selectedRadio = elements.find(el => el.checked);
-                let groupName = '';
+                let groupName = '', groupData = {};
                 if (selectedRadio) {
                     groupName = selectedRadio.value;
+                    groupData = ReactionsTypes.groups.find(group => group.name === groupName);
                 } else {
                     groupName = '';
                 }
 
-                callback(null, { groupName });
+                callback(null, { groupName, reactions: groupData ? groupData.reactions : [] });
                 this.hide()
             });
         }
@@ -925,19 +926,19 @@ buildfire.components.reactions = (() => {
             })
         }
 
-        static correctCountNumbers(num){
+        static correctCountNumbers(num) {
             num = num.toString().replace(/[^0-9.]/g, '');
             if (num < 1000) {
                 return num;
             }
             let si = [
-              {v: 1E3, s: "K"},
-              {v: 1E6, s: "M"},
-              {v: 1E9, s: "B"},
-              {v: 1E12, s: "T"},
-              {v: 1E15, s: "P"},
-              {v: 1E18, s: "E"}
-              ];
+                { v: 1E3, s: "K" },
+                { v: 1E6, s: "M" },
+                { v: 1E9, s: "B" },
+                { v: 1E12, s: "T" },
+                { v: 1E15, s: "P" },
+                { v: 1E18, s: "E" }
+            ];
             let index;
             for (index = si.length - 1; index > 0; index--) {
                 if (num >= si[index].v) {
@@ -1135,12 +1136,12 @@ buildfire.components.reactions = (() => {
             if (!ReactionsTypes.groups.length) {
                 ReactionsTypes.getReactionsGroups({}, (err, res) => {
                     if (err) return console.error(err);
-                    if(res&&res.length){
+                    if (res && res.length) {
                         ReactionsTypes.getReactionsTypes({ itemId: this.itemId, groupName: this.groupName }, (error, response) => {
                             if (error) {
                                 return console.error(error);
                             }
-    
+
                             this.reactionsArr = response;
                             this._init();
                         })
@@ -1648,12 +1649,12 @@ buildfire.components.reactions = (() => {
 
         // CP Side
         static openReactionGroupsDialog(options, callback) {
-            buildfire.getContext((e,r)=>{
-                if(e){
+            buildfire.getContext((e, r) => {
+                if (e) {
                     return console.error(e);
-                }else if(r && r.type=="control"){
+                } else if (r && r.type == "control") {
                     DialogManager.init(options, callback);
-                }else{
+                } else {
                     console.error('reaction dialog should be called in CP-side');
                 }
             })
