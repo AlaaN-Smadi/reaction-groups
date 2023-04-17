@@ -168,6 +168,7 @@ const APIHandlers = {
                 }]
             } else if (State.activePage !== 'groupList' && Object.keys(State.activeGroup).length) {
                 GroupsList.groups[State.groupIndex].reactions = ReactionsList.list.sortableList.items
+                GroupsList.groups[State.groupIndex].name = groupName;
             } else if (State.activePage !== 'groupList') {
                 groups = [...groups,
                 {
