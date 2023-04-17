@@ -36,7 +36,8 @@ buildfire.components.reactions = (() => {
                     if (err) {
                         return callback(err);
                     }
-                    buildfire.analytics.trackAction(options.itemId + "-" + options.reactionType + "-react");
+                    let groupName = ReactionsTypes.itemsReactionsGroupName[options.itemId];
+                    buildfire.analytics.trackAction(groupName);
                     return callback(null, result);
                 }
             );
@@ -264,7 +265,6 @@ buildfire.components.reactions = (() => {
                                 } else if (err) {
                                     return callback(err);
                                 }
-                                buildfire.analytics.trackAction(options.itemId + "-" + options.reactionType + "-unReact");
                                 return callback(null, { status: 'deleted' });
                             });
 
@@ -281,7 +281,6 @@ buildfire.components.reactions = (() => {
                                 if (err) {
                                     return callback(err);
                                 }
-                                buildfire.analytics.trackAction(options.itemId + "-" + options.reactionType + "-unReact");
                                 return callback(null, { status: 'deleted', data: result })
                             })
                         }
@@ -910,7 +909,7 @@ buildfire.components.reactions = (() => {
 
                     if (totalCountContainer) {
                         totalCountContainer.setAttribute('bf-reactions-total-count', totalReactionCount);
-                        totalCountContainer.innerHTML = totalReactionCount;
+                        totalCountContainer.innerHTML = this.correctCountNumbers(totalReactionCount);
                     }
                     if (btnContainer) {
                         btnContainer.style.width = `${btnWidth}rem`;
@@ -924,6 +923,28 @@ buildfire.components.reactions = (() => {
             countContainers.forEach(el => {
                 el.style.visibility = 'visible';
             })
+        }
+
+        static correctCountNumbers(num){
+            num = num.toString().replace(/[^0-9.]/g, '');
+            if (num < 1000) {
+                return num;
+            }
+            let si = [
+              {v: 1E3, s: "K"},
+              {v: 1E6, s: "M"},
+              {v: 1E9, s: "B"},
+              {v: 1E12, s: "T"},
+              {v: 1E15, s: "P"},
+              {v: 1E18, s: "E"}
+              ];
+            let index;
+            for (index = si.length - 1; index > 0; index--) {
+                if (num >= si[index].v) {
+                    break;
+                }
+            }
+            return (num / si[index].v).toFixed(1).replace(/\.0+$|(\.[0-9]*[1-9])0+$/, "$1") + si[index].s;
         }
 
         static _showUserReactions(reactions) {
@@ -1493,8 +1514,9 @@ buildfire.components.reactions = (() => {
                 if (newIcon && !oldIcon && reactionsCountContainer) {
                     let reactionsCount = reactionsCountContainer.getAttribute('bf-reactions-total-count');
                     let newCount = parseInt(reactionsCount) + 1;
+                    newCount = newCount >= 0 ? newCount : 0
                     reactionsCountContainer.setAttribute('bf-reactions-total-count', newCount);
-                    reactionsCountContainer.innerHTML = newCount;
+                    reactionsCountContainer.innerHTML = State.correctCountNumbers(newCount);
                 }
 
                 if (!newIcon && oldIcon) {
@@ -1502,7 +1524,7 @@ buildfire.components.reactions = (() => {
                     let newCount = parseInt(reactionsCount) - 1;
                     newCount = newCount >= 0 ? newCount : 0
                     reactionsCountContainer.setAttribute('bf-reactions-total-count', newCount);
-                    reactionsCountContainer.innerHTML = newCount;
+                    reactionsCountContainer.innerHTML = State.correctCountNumbers(newCount);
 
                     mainButton.src = this.reactionsArr[0].unSelectedUrl;
                     mainButton.classList.add('reactions-show-main-icon');

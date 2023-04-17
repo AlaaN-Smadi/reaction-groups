@@ -39,7 +39,7 @@
 }
 
 .reactions-total-count {
-    width: 1.5rem;
+    min-width: 1.5rem;
     height: 2rem;
     text-align: center;
     cursor: pointer;
