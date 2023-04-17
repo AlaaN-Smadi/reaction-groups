@@ -805,7 +805,11 @@ buildfire.components.reactions = (() => {
                 e.preventDefault();
 
                 let elements = e.target['selected-reaction-group'];
-                elements = Array.from(elements);
+                if(elements.length){
+                    elements = Array.from(elements);
+                }else{
+                    elements = [elements];
+                }
 
                 let selectedRadio = elements.find(el => el.checked);
                 let groupName = '';
@@ -1622,7 +1626,15 @@ buildfire.components.reactions = (() => {
 
         // CP Side
         static openReactionGroupsDialog(options, callback) {
-            DialogManager.init(options, callback);
+            buildfire.getContext((e,r)=>{
+                if(e){
+                    return console.error(e);
+                }else if(r && r.type=="control"){
+                    DialogManager.init(options, callback);
+                }else{
+                    console.error('reaction dialog should be called in CP-side');
+                }
+            })
         }
     }
 
