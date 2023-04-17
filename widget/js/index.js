@@ -1,6 +1,6 @@
 'use strict';
 
-const ComponentReactionsTypes = window["reactionsComponentTestPart"].ReactionsTypes;
+const ComponentReactionsTypes = window["reactionsComponentTest"].ReactionsTypes;
 const itemId = '2457ffb3-11a1-4e3f-ba46-b1cdaea055c5';
 
 function messageHandler() {

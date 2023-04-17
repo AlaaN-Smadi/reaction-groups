@@ -315,16 +315,16 @@ buildfire.components.reactions = (() => {
             }
 
             // get all available types for this item
-            ReactionsTypes.getReactionsTypes({groupName, itemId}, (err,reactions)=>{
-                if(err){
+            ReactionsTypes.getReactionsTypes({ groupName, itemId }, (err, reactions) => {
+                if (err) {
                     return callback(err)
                 }
                 let inArr = reactions.map(reaction => {
                     return `reactionUUID-${itemId}-${reaction.id}`
                 })
-    
+
                 let filter = { "_buildfire.index.array1.string1": { $in: inArr } }
-    
+
                 buildfire.appData.search(
                     {
                         filter, page: pageIndex, pageSize, recordCount: true
@@ -333,7 +333,7 @@ buildfire.components.reactions = (() => {
                         if (err) {
                             return callback(err);
                         }
-    
+
                         if (result) {
                             return callback(null, result);
                         }
@@ -633,7 +633,7 @@ buildfire.components.reactions = (() => {
             }
 
             const allActiveReactions = group.reactions.filter(reaction => (reaction.isActive == true && reaction.selectedUrl && reaction.unSelectedUrl));
-            if(!this.itemsReactionsGroupName[itemId]){
+            if (!this.itemsReactionsGroupName[itemId]) {
                 this.itemsReactionsGroupName[itemId] = groupName || group.name;
             }
 
@@ -650,12 +650,12 @@ buildfire.components.reactions = (() => {
                 return callback('Missing itemId');
             }
 
-            this.getReactionsTypes({itemId, groupName}, (err,res)=>{
-                if(err){
+            this.getReactionsTypes({ itemId, groupName }, (err, res) => {
+                if (err) {
                     return callback(err);
                 }
                 let validState = res.find(reaction => reaction.id == reactionUUID);
-    
+
                 if (validState) {
                     return callback(null, validState)
                 }
@@ -667,10 +667,13 @@ buildfire.components.reactions = (() => {
     class DialogManager {
         static dialogContainer = document.createElement('div');
 
-        static init(options, callback){
+        static init(options, callback) {
             if (!callback || typeof callback !== 'function') {
-                callback = (groupName) => { console.log('selected group changed to ' + groupName) }
-            } 
+                callback = (err, groupName) => {
+                    if (err) return console.error(err);
+                    return console.log('selected group changed to ' + groupName);
+                }
+            }
 
             this.show();
             this._addListeners(callback);
@@ -756,12 +759,12 @@ buildfire.components.reactions = (() => {
             let list = '';
             groups.forEach(group => {
                 let reactions = '';
-                group.reactions.forEach(reaction=>{
+                group.reactions.forEach(reaction => {
                     let src = buildfire.imageLib.cropImage(reaction.selectedUrl, { size: "half_width", aspect: "1:1" })
                     reactions += `<img style="width:24px; height:24px;" class="margin-right-five" src="${src}" />`;
                 })
 
-                let li=`<tr style="border: 0.5px solid var(--c-gray3);">
+                let li = `<tr style="border: 0.5px solid var(--c-gray3);">
                             <td style="width:0%;" class="padding-bottom-fifteen padding-top-fifteen padding-left-fifteen padding-right-fifteen">
                                 <input name="selected-reaction-group" type="radio" value="${group.name}" id="${group.name}" style="width:20px;height:20px;" />
                             </td>
@@ -773,13 +776,13 @@ buildfire.components.reactions = (() => {
                             </td>
                         </tr>`;
 
-                list+=li;
+                list += li;
             })
 
             listContainer.innerHTML = `<p style="font-weight: 700;color: var(--c-info);margin-left: 50px;">Group Name</p><table style="border: 0.5px solid var(--c-gray3);"><tbody>${list}</tbody></table>`;
             let inputs = listContainer.querySelectorAll('input');
-            Array.from(inputs).forEach(input=>{
-                input.addEventListener('change', ()=>{
+            Array.from(inputs).forEach(input => {
+                input.addEventListener('change', () => {
                     let submitBtn = this.dialogContainer.querySelector('.save-modal');
                     submitBtn.removeAttribute('disabled')
                 })
@@ -800,15 +803,15 @@ buildfire.components.reactions = (() => {
                 let elements = e.target['selected-reaction-group'];
                 elements = Array.from(elements);
 
-                let selectedRadio = elements.find(el=>el.checked);
-                let groupName='';
-                if(selectedRadio){
+                let selectedRadio = elements.find(el => el.checked);
+                let groupName = '';
+                if (selectedRadio) {
                     groupName = selectedRadio.value;
-                }else{
+                } else {
                     groupName = '';
                 }
 
-                callback({groupName});
+                callback(null, { groupName });
                 this.hide()
             });
         }
@@ -867,13 +870,13 @@ buildfire.components.reactions = (() => {
             // print reactions count in the dom
             summaries.forEach(summery => {
                 let container = document.querySelector(`[bf-reactions-itemid="${summery.data.itemId}"]`),
-                    iconIds = [], btnWidth = 2, groupName=container.getAttribute('bf-group-name');
+                    iconIds = [], btnWidth = 2, groupName = container.getAttribute('bf-group-name');
                 let totalReactionCount = 0;
                 if (container) {
                     summery.data.reactions.forEach(reaction => {
-                        ReactionsTypes.validateReactionTypes({ reactionUUID: reaction.reactionUUID, itemId: summery.data.itemId, groupName:groupName?JSON.parse(groupName):'' }, (err, res) => {
+                        ReactionsTypes.validateReactionTypes({ reactionUUID: reaction.reactionUUID, itemId: summery.data.itemId, groupName: groupName ? JSON.parse(groupName) : '' }, (err, res) => {
                             if (err) console.error(err);
-                            else if(reaction.count>0){
+                            else if (reaction.count > 0) {
                                 totalReactionCount += reaction.count;
                                 iconIds.push(res.id);
                                 btnWidth += 0.5;
@@ -1556,7 +1559,7 @@ buildfire.components.reactions = (() => {
                 }
             }
 
-            let options = { itemId: this.itemId, groupName:this.groupName, pageIndex: 0, pageSize: 50 }, totalUsersReactions = [];
+            let options = { itemId: this.itemId, groupName: this.groupName, pageIndex: 0, pageSize: 50 }, totalUsersReactions = [];
             Reactions.get(options, (error, res) => {
                 if (error) { }
                 else if (res.result.length) {
@@ -1618,7 +1621,7 @@ buildfire.components.reactions = (() => {
         }
     }
 
-    window["reactionsComponentTestPart"] = { Reaction, Reactions, ReactionsSummary, ReactionsSummaries, ReactionsTypes };
+    window["reactionsComponentTest"] = { Reaction, Reactions, ReactionsSummary, ReactionsSummaries, ReactionsTypes };
 
     return ReactionComponent;
 })();
