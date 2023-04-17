@@ -1613,8 +1613,8 @@ buildfire.components.reactions = (() => {
         }
 
         // CP Side
-        static openReactionGroupsDialog() {
-            DialogManager.init({}, (groupName) => { console.log(groupName) })
+        static openReactionGroupsDialog(options, callback) {
+            DialogManager.init(options, callback);
         }
     }
 
