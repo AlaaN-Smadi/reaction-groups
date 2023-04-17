@@ -867,7 +867,7 @@ buildfire.components.reactions = (() => {
             // print reactions count in the dom
             summaries.forEach(summery => {
                 let container = document.querySelector(`[bf-reactions-itemid="${summery.data.itemId}"]`),
-                    iconIds = [], btnWidth = 1.5, groupName=container.getAttribute('bf-group-name');
+                    iconIds = [], btnWidth = 2, groupName=container.getAttribute('bf-group-name');
                 let totalReactionCount = 0;
                 if (container) {
                     summery.data.reactions.forEach(reaction => {
@@ -952,7 +952,7 @@ buildfire.components.reactions = (() => {
             let container = document.querySelector(`[bf-reactions-itemid="${itemId}"]`);
             if (container) {
                 let userReactionType = container.getAttribute('bf-user_react-uuid');
-                let btnWidth = 1.5;
+                let btnWidth = 2;
 
                 let secondaryReactionIcons = container.querySelectorAll(`[bf-reaction-image-id]`);
                 let selectedIconRemoved = false;

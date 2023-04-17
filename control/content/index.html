@@ -42,18 +42,12 @@
 </head>
 
 <body>
-  <button class="btn btn-primary" id="openDialog">open dialog</button>
   <div id="mainContainer"></div>
 </body>
 
 <script>
   window.onload = () => {
     Views.init();
-
-    let openDialog = document.getElementById('openDialog');
-    openDialog.addEventListener('click', () => {
-      buildfire.components.reactions.openReactionGroupsDialog()
-    })
   }
 </script>
 
