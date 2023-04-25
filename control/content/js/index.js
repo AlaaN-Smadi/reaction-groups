@@ -176,9 +176,8 @@ const APIHandlers = {
                     reactions: ReactionsList.list.sortableList.items
                 }]
             }
-            groupName = groupName ? JSON.stringify(groupName) : JSON.stringify(groups[0].name);
             buildfire.messaging.sendMessageToWidget({
-                openReactionList, groups, groupName
+                openReactionList, groups, groupName, cmd: 'reactions group plugin'
             });
         }, 300);
     }
